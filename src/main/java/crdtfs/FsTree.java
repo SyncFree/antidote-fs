@@ -11,7 +11,7 @@ import ru.serce.jnrfuse.struct.FileStat;
 
 public class FsTree {
 
-    public class Directory extends FsElement {
+    public static class Directory extends FsElement {
         private List<FsElement> contents = new ArrayList<>();
 
         public Directory(String name) {
@@ -23,20 +23,22 @@ public class FsTree {
         }
 
         public synchronized void add(FsElement p) {
+            // TODO add file to folder
             contents.add(p);
             p.parent = this;
         }
 
         public synchronized void deleteChild(FsElement child) {
+            // TODO delete child 
             contents.remove(child);
         }
 
         @Override
         public FsElement find(String path) {
-            // it's this folder
-            FsElement res = super.find(path);
-            if (res != null)
-                return res;
+            // it's this element
+            FsElement element = super.find(path);
+            if (element != null)
+                return element;
 
             while (path.startsWith("/"))
                 path = path.substring(1);
@@ -70,17 +72,18 @@ public class FsTree {
         }
 
         public synchronized void mkfile(String lastComponent) {
+            // TODO create file reference on Antidote
             contents.add(new File(lastComponent, this));
         }
 
         public synchronized void read(Pointer buf, FuseFillDir filler) {
-            for (FsElement p : contents) {
+            // TODO read dir content on Antidote
+            for (FsElement p : contents)
                 filler.apply(buf, p.name, null, 0);
-            }
         }
     }
 
-    public class File extends FsElement {
+    public static class File extends FsElement {
         private ByteBuffer contents = ByteBuffer.allocate(0);
 
         public File(String name) {
@@ -108,6 +111,7 @@ public class FsTree {
         }
 
         public int read(Pointer buffer, long size, long offset) {
+            // TODO read from file
             int bytesToRead = (int) Math.min(contents.capacity() - offset, size);
             byte[] bytesRead = new byte[bytesToRead];
             synchronized (this) {
@@ -120,6 +124,7 @@ public class FsTree {
         }
 
         public synchronized void truncate(long size) {
+            // TODO cut file to size (?)
             if (size < contents.capacity()) {
                 // Need to create a new, smaller buffer
                 ByteBuffer newContents = ByteBuffer.allocate((int) size);
@@ -131,6 +136,7 @@ public class FsTree {
         }
 
         public int write(Pointer buffer, long bufSize, long writeOffset) {
+            // TODO write file
             int maxWriteIndex = (int) (writeOffset + bufSize);
             byte[] bytesToWrite = new byte[(int) bufSize];
             synchronized (this) {
@@ -149,7 +155,7 @@ public class FsTree {
         }
     }
 
-    public abstract class FsElement {
+    public static abstract class FsElement {
         private String name;
         private Directory parent;
 
@@ -163,6 +169,7 @@ public class FsTree {
         }
 
         public synchronized void delete() {
+            // TODO rm element from parent directory
             if (parent != null) {
                 parent.deleteChild(this);
                 parent = null;
@@ -173,6 +180,7 @@ public class FsTree {
             while (path.startsWith("/"))
                 path = path.substring(1);
             if (path.equals(name) || path.isEmpty())
+                // TODO verify that it's still there on Antidote ?
                 return this;
             return null;
         }
@@ -180,9 +188,8 @@ public class FsTree {
         public abstract void getattr(FileStat stat);
 
         public void rename(String newName) {
-            while (newName.startsWith("/")) {
+            while (newName.startsWith("/"))
                 newName = newName.substring(1);
-            }
             name = newName;
         }
     }
