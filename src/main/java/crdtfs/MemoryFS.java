@@ -366,6 +366,6 @@ public class MemoryFS extends FuseStubFS {
 			memfs.mount(Paths.get("/tmp/mnt"), true);
 		} finally {
 			memfs.umount();
-		}
-	}
+        }
+    }
 }
