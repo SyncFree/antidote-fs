@@ -6,17 +6,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import com.google.protobuf.ByteString;
-
 import crdtfs.FsTree.Directory;
 import crdtfs.FsTree.File;
 import crdtfs.FsTree.FsElement;
-import eu.antidotedb.client.AntidoteClient;
-import eu.antidotedb.client.AntidoteStaticTransaction;
-import eu.antidotedb.client.Bucket;
-import eu.antidotedb.client.Host;
-import eu.antidotedb.client.MapRef;
-import eu.antidotedb.client.ValueCoder;
 import jnr.ffi.Pointer;
 import jnr.ffi.types.mode_t;
 import jnr.ffi.types.off_t;
@@ -29,11 +21,10 @@ import ru.serce.jnrfuse.struct.FuseFileInfo;
 
 public class CrdtFs extends FuseStubFS {
 
-    private AntidoteClient antidote;
-    // private MapRef<String> rootDirectory;
     private Directory rootDirectory;
 
     public CrdtFs() {
+        // create some folders and files
         rootDirectory = new Directory("");
         rootDirectory.add(new File("Sample file.txt", "Hello there, feel free to look around.\n"));
         rootDirectory.add(new Directory("Sample directory"));
@@ -44,84 +35,7 @@ public class CrdtFs extends FuseStubFS {
         Directory nestedDirectory = new Directory("Sample nested directory");
         dirWithFiles.add(nestedDirectory);
         nestedDirectory.add(new File("So deep.txt", "Man, I'm like, so deep in this here file structure.\n"));
-
-        // antidote = new AntidoteClient(new Host("127.0.0.1", 8087));
-
-        // create folders and files
-        /*
-         * Bucket<String> bucket = Bucket.create("fsBucket"); AntidoteStaticTransaction
-         * tx = antidote.createStaticTransaction(); rootDirectory =
-         * bucket.map_aw("root"); rootDirectory.map_aw("dirA").register("file1",
-         * ValueCoder.bytestringEncoder).set(tx,
-         * ByteString.copyFrom("Ciao, sono file1".getBytes()));
-         * rootDirectory.register("hello.txt", ValueCoder.bytestringEncoder).set(tx,
-         * ByteString.copyFrom("Ciao, sono hello.txt".getBytes()));
-         * tx.commitTransaction();
-         */
     }
-
-    /*
-     * // get file attributes
-     * 
-     * @Override public int getattr(String path, FileStat stat) {
-     * System.out.println("getattr path: " + path);
-     * 
-     * int resp = 0; switch (StringUtils.countMatches(path, "/")) {
-     * 
-     * case 1: if (Objects.equals(path, "/")) { // root folder
-     * stat.st_mode.set(FileStat.S_IFDIR | 0755); stat.st_nlink.set(2); } else { //
-     * files or folder in root resp = -ErrorCodes.ENOENT();
-     * MapRef.MapReadResult<String> res = rootFolder.read(antidote.noTransaction());
-     * for (MapKey<String> key : res.mapKeySet()) if
-     * (key.getKey().equals(path.substring(1))) { if
-     * (key.getType().equals(CRDT_type.AWMAP)) { stat.st_mode.set(FileStat.S_IFDIR |
-     * 0755); stat.st_nlink.set(2); } else { stat.st_mode.set(FileStat.S_IFREG |
-     * 0444); stat.st_nlink.set(1); stat.st_size.set(res.get(key,
-     * ResponseDecoder.register()).get().getBytes().length); } resp = 0; break; } }
-     * break;
-     * 
-     * case 2: // dirA folder if
-     * (path.substring(path.lastIndexOf("/")).equals("file1")) {
-     * stat.st_mode.set(FileStat.S_IFREG | 0444); stat.st_nlink.set(1);
-     * stat.st_size.set(100); // XXX // MapRef.MapReadResult<String> res =
-     * rootFolder.read(antidote.noTransaction()); // res.map_aw("dirA",
-     * ValueCoder.bytestringEncoder).register("file1",
-     * ValueCoder.bytestringEncoder).getValue(); } else resp = -ErrorCodes.ENOENT();
-     * break;
-     * 
-     * default: resp = -ErrorCodes.ENOENT(); break; } return resp; }
-     * 
-     * // ls dir
-     * 
-     * @Override public int readdir(String path, Pointer buf, FuseFillDir
-     * filter, @off_t long offset, FuseFileInfo fi) {
-     * 
-     * System.out.println("readdir path: " + path); filter.apply(buf, ".", null, 0);
-     * filter.apply(buf, "..", null, 0);
-     * 
-     * if ("/".equals(path)) { MapRef.MapReadResult<String> res =
-     * rootFolder.read(antidote.noTransaction()); for (String key : res.keySet())
-     * filter.apply(buf, key, null, 0); } else if ("/dirA".equals(path)){
-     * filter.apply(buf, "file1", null, 0); } else return -ErrorCodes.ENOENT();
-     * return 0; }
-     * 
-     * // open file
-     * 
-     * @Override public int open(String path, FuseFileInfo fi) { // if
-     * (!HELLO_PATH.equals(path)) { // return -ErrorCodes.ENOENT(); // }
-     * System.out.println("open path: " + path); return 0; }
-     * 
-     * // read file
-     * 
-     * @Override public int read(String path, Pointer buf, @size_t long size, @off_t
-     * long offset, FuseFileInfo fi) { // if (!HELLO_PATH.equals(path)) { // return
-     * -ErrorCodes.ENOENT(); // } System.out.println("reading path: " + path);
-     * 
-     * // byte[] bytes = HELLO_STR.getBytes(); // int length = bytes.length; // if
-     * (offset < length) { // if (offset + size > length) { // size = length -
-     * offset; // } // buf.put(0, bytes, 0, bytes.length); // } else { // size = 0;
-     * // } return (int) size; }
-     */
 
     @Override
     public int create(String path, @mode_t long mode, FuseFileInfo fi) {
