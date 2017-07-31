@@ -37,11 +37,21 @@ public class FsTree {
         }
 
         public synchronized void add(FsElement p) {
+            
+//            try {
             // XXX need to set an initial value or reset or can create w/o it?
             if (p instanceof File) 
-                mapRef.register(p.name, ValueCoder.utf8String).reset(antidote.noTransaction());
-            else 
-                mapRef.map_aw(p.name, ValueCoder.utf8String).reset(antidote.noTransaction());
+                //mapRef.register(p.name, ValueCoder.utf8String).reset(antidote.noTransaction());
+                mapRef.register(p.name, ValueCoder.utf8String).set(antidote.noTransaction(), "");
+            else
+                mapRef.map_aw(p.name, ValueCoder.utf8String).register("FOLDER_MARKER").set(antidote.noTransaction(), "");
+                //mapRef.map_aw(p.name, ValueCoder.utf8String).reset(antidote.noTransaction());
+            
+//            } catch (Exception e) {
+//                System.out.println(e.getMessage());
+//                e.printStackTrace();
+//                System.exit(-1);
+//            }
             contents.add(p);
             p.parent = this;
         }
