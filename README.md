@@ -1,5 +1,7 @@
 # Antidote file system
 
+[![Build Status](https://travis-ci.org/pviotti/antidote-fs.svg?branch=master)](https://travis-ci.org/pviotti/antidote-fs)  
+
 A file system backed by [Antidote](http://syncfree.github.io/antidote/).  
 Work in progress.
 
@@ -14,7 +16,7 @@ for instance by issuing the following Docker command:
 
     docker run --rm -it -p "8087:8087" antidotedb/antidote
 
-to mount the file system under `/tmp/mnt` on Linux:
+to mount the file system under `/tmp/mnt` on Linux just issue:
 
     ./gradlew run
 
