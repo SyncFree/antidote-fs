@@ -1,4 +1,4 @@
-package crdtfs;
+package eu.antidotedb.fs;
 
 import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
@@ -6,9 +6,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import crdtfs.FsTree.Directory;
-import crdtfs.FsTree.File;
-import crdtfs.FsTree.FsElement;
+import eu.antidotedb.fs.FsTree.Directory;
+import eu.antidotedb.fs.FsTree.File;
+import eu.antidotedb.fs.FsTree.FsElement;
 import jnr.ffi.Pointer;
 import jnr.ffi.types.mode_t;
 import jnr.ffi.types.off_t;
@@ -19,11 +19,11 @@ import ru.serce.jnrfuse.FuseStubFS;
 import ru.serce.jnrfuse.struct.FileStat;
 import ru.serce.jnrfuse.struct.FuseFileInfo;
 
-public class CrdtFs extends FuseStubFS {
+public class AntidoteFs extends FuseStubFS {
 
     private Directory rootDirectory;
 
-    public CrdtFs() {
+    public AntidoteFs() {
         // create some folders and files
         rootDirectory = new Directory("");
         rootDirectory.add(new File("Sample file.txt", "Hello there, feel free to look around.\n"));
@@ -205,7 +205,7 @@ public class CrdtFs extends FuseStubFS {
                 System.exit(-1);
             }
         }
-        CrdtFs stub = new CrdtFs();
+        AntidoteFs stub = new AntidoteFs();
         try {
             stub.mount(dir, true, true);
         } finally {

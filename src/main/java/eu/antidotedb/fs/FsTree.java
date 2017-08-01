@@ -1,4 +1,4 @@
-package crdtfs;
+package eu.antidotedb.fs;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;

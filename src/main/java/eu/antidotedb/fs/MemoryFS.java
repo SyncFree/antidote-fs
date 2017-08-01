@@ -1,4 +1,4 @@
-package crdtfs;
+package eu.antidotedb.fs;
 
 import jnr.ffi.Pointer;
 import jnr.ffi.types.mode_t;
