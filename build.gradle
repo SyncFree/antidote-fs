@@ -32,7 +32,7 @@ dependencies {
 }
 
 // Define the main class for the application
-mainClassName = 'crdtfs.CrdtFs'
+mainClassName = 'eu.antidotedb.fs.AntidoteFs'
 
 jar {
   manifest { 
