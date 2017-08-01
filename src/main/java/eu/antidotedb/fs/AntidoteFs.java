@@ -21,20 +21,10 @@ import ru.serce.jnrfuse.struct.FuseFileInfo;
 
 public class AntidoteFs extends FuseStubFS {
 
-    private Directory rootDirectory;
+    public Directory rootDirectory;
 
     public AntidoteFs() {
-        // create some folders and files
         rootDirectory = new Directory("");
-        rootDirectory.add(new File("Sample file.txt", "Hello there, feel free to look around.\n"));
-        rootDirectory.add(new Directory("Sample directory"));
-        Directory dirWithFiles = new Directory("Directory with files");
-        rootDirectory.add(dirWithFiles);
-        dirWithFiles.add(new File("hello.txt", "This is some sample text.\n"));
-        dirWithFiles.add(new File("hello again.txt", "This another file with text in it! Oh my!\n"));
-        Directory nestedDirectory = new Directory("Sample nested directory");
-        dirWithFiles.add(nestedDirectory);
-        nestedDirectory.add(new File("So deep.txt", "Man, I'm like, so deep in this here file structure.\n"));
     }
 
     @Override
