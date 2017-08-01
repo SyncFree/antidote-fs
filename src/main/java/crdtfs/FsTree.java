@@ -2,63 +2,56 @@ package crdtfs;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
 
+import eu.antidotedb.antidotepb.AntidotePB.CRDT_type;
 import eu.antidotedb.client.AntidoteClient;
 import eu.antidotedb.client.Bucket;
 import eu.antidotedb.client.Host;
 import eu.antidotedb.client.MapKey;
 import eu.antidotedb.client.MapRef;
 import eu.antidotedb.client.MapRef.MapReadResult;
-import eu.antidotedb.client.RegisterRef;
 import eu.antidotedb.client.ValueCoder;
 import jnr.ffi.Pointer;
 import ru.serce.jnrfuse.FuseFillDir;
 import ru.serce.jnrfuse.struct.FileStat;
+
+//XXX can't create empty file (not distinguishable from not present file when reading)
+//XXX can't create an empty map: must create a dummy register in it
 
 public class FsTree {
 
     static private AntidoteClient antidote = new AntidoteClient(new Host("127.0.0.1", 8087));
     static protected Bucket<String> bucket = Bucket.create("fsBucket");
 
+    static private String DIRECTORY_MARKER = "DM";
+    static private String NO_FILE_MARKER = "";
+
     public static class Directory extends FsElement {
-        private List<FsElement> contents = new ArrayList<>();
-        private MapRef<String> mapRef;
+        public MapRef<String> dirMapRef;
 
         public Directory(String name) {
             super(name);
-            mapRef = bucket.map_aw(name);
+            dirMapRef = bucket.map_aw(name);
+            dirMapRef.register(DIRECTORY_MARKER).set(antidote.noTransaction(), "");
         }
 
         public Directory(String name, Directory parent) {
             super(name, parent);
-            mapRef = bucket.map_aw(name);
+            dirMapRef = bucket.map_aw(name);
+            dirMapRef.register(DIRECTORY_MARKER).set(antidote.noTransaction(), "");
         }
 
         public synchronized void add(FsElement p) {
-            
-//            try {
-            // XXX need to set an initial value or reset or can create w/o it?
-            if (p instanceof File) 
-                //mapRef.register(p.name, ValueCoder.utf8String).reset(antidote.noTransaction());
-                mapRef.register(p.name, ValueCoder.utf8String).set(antidote.noTransaction(), "");
-            else
-                mapRef.map_aw(p.name, ValueCoder.utf8String).register("FOLDER_MARKER").set(antidote.noTransaction(), "");
-                //mapRef.map_aw(p.name, ValueCoder.utf8String).reset(antidote.noTransaction());
-            
-//            } catch (Exception e) {
-//                System.out.println(e.getMessage());
-//                e.printStackTrace();
-//                System.exit(-1);
-//            }
-            contents.add(p);
-            p.parent = this;
+            if (p instanceof File)
+                dirMapRef.register(p.name, ValueCoder.utf8String).set(antidote.noTransaction(),
+                        new String(((File) p).contents.array()));
+            else if (p instanceof Directory)
+                dirMapRef.map_aw(p.name, ValueCoder.utf8String).register(DIRECTORY_MARKER).set(antidote.noTransaction(),
+                        "");
         }
 
         public synchronized void deleteChild(FsElement child) {
-            mapRef.removeKey(antidote.noTransaction(), MapKey.register(child.name));
-            contents.remove(child);
+            dirMapRef.removeKey(antidote.noTransaction(), MapKey.register(child.name));
         }
 
         public FsElement find(String path) {
@@ -66,27 +59,34 @@ public class FsTree {
                 path = path.substring(1);
             // it's this element
             if (path.equals(this.name) || path.isEmpty()) {
-                MapReadResult<String> res = mapRef.read(antidote.noTransaction());
-                // XXX how to verify that it's still there on Antidote ?
-                return this;
+                MapReadResult<String> res = dirMapRef.read(antidote.noTransaction());
+                if (res.keySet().contains(DIRECTORY_MARKER))
+                    return this;
+                else {
+                    parent.deleteChild(this);
+                    return null;
+                }                    
             }
 
             synchronized (this) {
                 if (!path.contains("/")) {
                     // it's in this folder
-                    for (FsElement p : contents)
-                        if (p.name.equals(path))
-                            // XXX how to verify that it's still there on Antidote ?
-                            // can be file or folder
-                            return p;
+                    MapReadResult<String> res = dirMapRef.read(antidote.noTransaction());
+                    for (MapKey<String> key : res.mapKeySet())
+                        if (key.getKey().equals(path))
+                            if (key.getType().equals(CRDT_type.AWMAP))
+                                return new Directory(path, this);
+                            else if (key.getType().equals(CRDT_type.LWWREG))
+                                return new File(path, this);
                     return null;
                 } else {
                     // it's in a subfolder
                     String nextName = path.substring(0, path.indexOf("/"));
                     String rest = path.substring(path.indexOf("/"));
-                    for (FsElement p : contents)
-                        if (p.name.equals(nextName))
-                            return p.find(rest);
+                    MapReadResult<String> res = dirMapRef.read(antidote.noTransaction());
+                    for (MapKey<String> key : res.mapKeySet())
+                        if (key.getType().equals(CRDT_type.AWMAP) && nextName.equals(key.getKey()))
+                            return new Directory(nextName, this).find(rest);
                 }
             }
             return null;
@@ -98,48 +98,41 @@ public class FsTree {
         }
 
         public synchronized void mkdir(String lastComponent) {
-            contents.add(new Directory(lastComponent, this));
-            mapRef.map_aw(lastComponent, ValueCoder.utf8String).reset(antidote.noTransaction());
+            dirMapRef.map_aw(lastComponent, ValueCoder.utf8String).register(DIRECTORY_MARKER)
+                    .set(antidote.noTransaction(), "");
         }
 
         public synchronized void mkfile(String lastComponent) {
-            contents.add(new File(lastComponent, this));
-            mapRef.register(lastComponent, ValueCoder.utf8String).reset(antidote.noTransaction());
+            dirMapRef.register(lastComponent, ValueCoder.utf8String).set(antidote.noTransaction(), "");
         }
 
         public synchronized void read(Pointer buf, FuseFillDir filler) {
-            MapReadResult<String> res = mapRef.read(antidote.noTransaction());
-            for (String element : res.keySet())
-                filler.apply(buf, element, null, 0);
-            //for (FsElement p : contents)
-            //    filler.apply(buf, p.name, null, 0);
+            MapReadResult<String> res = dirMapRef.read(antidote.noTransaction());
+            for (String element : res.keySet()) 
+                if (!element.equals(DIRECTORY_MARKER))
+                    filler.apply(buf, element, null, 0);
         }
     }
 
     public static class File extends FsElement {
-        //private ByteBuffer contents = ByteBuffer.allocate(0);
-        private RegisterRef<String> regRef;
+        public ByteBuffer contents = ByteBuffer.allocate(0);
 
         public File(String name) {
             super(name);
-            regRef = bucket.register(name);
         }
 
         public File(String name, Directory parent) {
             super(name, parent);
-            regRef = bucket.register(name);
         }
 
         public File(String name, String text) {
             super(name);
-            regRef = bucket.register(name);
-            regRef.set(antidote.noTransaction(), text);
-//            try {
-//                byte[] contentBytes = text.getBytes("UTF-8");
-//                contents = ByteBuffer.wrap(contentBytes);
-//            } catch (UnsupportedEncodingException e) {
-//                // Not going to happen
-//            }
+            try {
+                byte[] contentBytes = text.getBytes("UTF-8");
+                contents = ByteBuffer.wrap(contentBytes);
+            } catch (UnsupportedEncodingException e) {
+                // Not going to happen
+            }
         }
 
         public File find(String path) {
@@ -147,9 +140,11 @@ public class FsTree {
                 path = path.substring(1);
             // it's this element
             if (path.equals(this.name)) {
-                regRef.read(antidote.noTransaction());
-                // XXX how to verify that it's still there on Antidote ?
-                return this;
+                String res = parent.dirMapRef.register(name).read(antidote.noTransaction());
+                if (!res.equals(NO_FILE_MARKER))
+                    return this;
+                else
+                    return null;
             } else
                 return null;
         }
@@ -157,17 +152,17 @@ public class FsTree {
         @Override
         public void getattr(FileStat stat) {
             stat.st_mode.set(FileStat.S_IFREG | 0777);
-            String res = regRef.read(antidote.noTransaction());
+            String res = parent.dirMapRef.register(name).read(antidote.noTransaction());
             stat.st_size.set(res.getBytes().length);
         }
 
         public int read(Pointer buffer, long size, long offset) {
-            String res = regRef.read(antidote.noTransaction());
+            String res = parent.dirMapRef.register(name).read(antidote.noTransaction());
             byte[] contentBytes = new byte[1];
             try {
                 contentBytes = res.getBytes("UTF-8");
             } catch (UnsupportedEncodingException e) {
-                // 
+                // Not going to happen
             }
             ByteBuffer contents = ByteBuffer.wrap(contentBytes);
             int bytesToRead = (int) Math.min(res.getBytes().length - offset, size);
@@ -184,23 +179,15 @@ public class FsTree {
         public synchronized void truncate(long size) {
             System.out.println("TRUNCATE NOT IMPLEMENTED");
             // XXX cut file to size (?)
-            /*if (size < contents.capacity()) {
-                // Need to create a new, smaller buffer
-                ByteBuffer newContents = ByteBuffer.allocate((int) size);
-                byte[] bytesRead = new byte[(int) size];
-                contents.get(bytesRead);
-                newContents.put(bytesRead);
-                contents = newContents;
-            }*/
         }
 
-        public int write(Pointer buffer, long bufSize, long writeOffset) {
-            String res = regRef.read(antidote.noTransaction());
+        public synchronized int write(Pointer buffer, long bufSize, long writeOffset) {
+            String res = parent.dirMapRef.register(name).read(antidote.noTransaction());
             byte[] contentBytes = new byte[1];
             try {
                 contentBytes = res.getBytes("UTF-8");
             } catch (UnsupportedEncodingException e) {
-                // 
+                // Not going to happen
             }
             ByteBuffer contents = ByteBuffer.wrap(contentBytes);
             int maxWriteIndex = (int) (writeOffset + bufSize);
@@ -217,14 +204,14 @@ public class FsTree {
                 contents.put(bytesToWrite);
                 contents.position(0); // Rewind
             }
-            regRef.set(antidote.noTransaction(), new String(contents.array()));
+            parent.dirMapRef.register(name).set(antidote.noTransaction(), new String(contents.array()));
             return (int) bufSize;
         }
     }
 
     public static abstract class FsElement {
         protected String name;
-        private Directory parent;
+        protected Directory parent;
 
         public FsElement(String name) {
             this(name, null);
@@ -236,14 +223,13 @@ public class FsTree {
         }
 
         public synchronized void delete() {
-            // TODO rm element from parent directory
             if (parent != null) {
                 parent.deleteChild(this);
                 parent = null;
             }
         }
-        
-        public abstract FsElement find(String path); 
+
+        public abstract FsElement find(String path);
 
         public abstract void getattr(FileStat stat);
 
