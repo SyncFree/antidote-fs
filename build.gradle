@@ -16,9 +16,9 @@ repositories {
 
 dependencies {
     compile 'org.apache.commons:commons-lang3:3.6'
-	compile 'eu.antidotedb:antidote-java-client:0.0.6'
-	compile 'com.github.serceman:jnr-fuse:0.4.1'
-	
+    compile 'eu.antidotedb:antidote-java-client:0.0.6'
+    compile 'com.github.serceman:jnr-fuse:0.4.1'
+    
     testCompile 'junit:junit:4.12'
 }
 
