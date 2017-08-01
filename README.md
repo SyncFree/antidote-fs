@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.org/pviotti/antidote-fs.svg?branch=master)](https://travis-ci.org/pviotti/antidote-fs)  
 
 A file system backed by [Antidote](http://syncfree.github.io/antidote/).  
-Work in progress.
+**WARNING: Work in progress, alpha quality.**
 
 ## Getting started
 
@@ -20,3 +20,6 @@ to mount the file system under `/tmp/mnt` on Linux just issue:
 
     ./gradlew run
 
+## Credits
+
+[RainbowFS project](http://rainbowfs.lip6.fr/).
