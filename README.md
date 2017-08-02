@@ -1,6 +1,6 @@
 # Antidote file system
 
-[![Build Status](https://travis-ci.org/pviotti/antidote-fs.svg?branch=master)](https://travis-ci.org/pviotti/antidote-fs)  
+[![Build Status](https://travis-ci.org/SyncFree/antidote-fs.svg?branch=master)](https://travis-ci.org/SyncFree/antidote-fs)  
 
 A file system backed by [Antidote](http://syncfree.github.io/antidote/).  
 **WARNING: Work in progress, alpha quality.**
