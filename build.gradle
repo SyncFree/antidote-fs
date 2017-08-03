@@ -5,6 +5,10 @@ mainClassName = 'eu.antidotedb.fs.AntidoteFs'
 
 repositories {
     jcenter()
+    
+    maven {
+        url 'https://dl.bintray.com/palantir/releases'
+    }
 }
 
 dependencies {
@@ -13,6 +17,7 @@ dependencies {
     compile 'com.beust:jcommander:1.72'
     
     testCompile 'junit:junit:4.12'
+    testCompile 'com.palantir.docker.compose:docker-compose-rule-junit4:0.32.0'
 }
 
 run {

@@ -1,0 +1,9 @@
+version: "2"
+services:
+  antidote:
+    image: antidotedb/antidote:latest
+    ports:
+     - "8087:8087"
+    environment:
+      NODE_NAME: "antidote@antidote1"
+      SHORT_NAME: "true"
