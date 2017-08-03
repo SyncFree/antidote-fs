@@ -1,10 +1,12 @@
 package eu.antidotedb.fs;
 
 import java.io.IOException;
-import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.Parameter;
 
 import eu.antidotedb.fs.FsTree.Directory;
 import eu.antidotedb.fs.FsTree.File;
@@ -21,9 +23,17 @@ import ru.serce.jnrfuse.struct.FuseFileInfo;
 
 public class AntidoteFs extends FuseStubFS {
 
+    private static class Args {
+        @Parameter(names = { "--dir", "-d" })
+        private String fsDir;
+        @Parameter(names = { "--antidote", "-a" })
+        private String antidoteAddress;
+    }
+
     public Directory rootDirectory;
 
-    public AntidoteFs() {
+    public AntidoteFs(String antidoteAddress) {
+        FsTree.initFsTree(antidoteAddress);
         rootDirectory = new Directory("");
     }
 
@@ -186,18 +196,23 @@ public class AntidoteFs extends FuseStubFS {
     }
 
     public static void main(String[] args) {
-        AntidoteFs stub = null;
-        Path dir = Paths.get("/tmp/mnt");
+
+        Args ar = new Args();
+        JCommander.newBuilder().addObject(ar).build().parse(args);
+         
+        Path rootPath = Paths.get(ar.fsDir);
         try {
-            Files.createDirectory(dir);
-        } catch (FileAlreadyExistsException e) {
+            if (Files.notExists(rootPath))
+                Files.createDirectory(rootPath);
         } catch (IOException e) {
             e.printStackTrace();
             System.exit(-1);
         }
+
+        AntidoteFs stub = null;
         try {
-            stub = new AntidoteFs();
-            stub.mount(dir, true, true);
+            stub = new AntidoteFs(ar.antidoteAddress);
+            stub.mount(rootPath, true, true);
         } finally {
             if (stub != null)
                 stub.umount();

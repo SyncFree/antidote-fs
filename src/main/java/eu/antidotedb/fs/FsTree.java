@@ -20,11 +20,18 @@ import ru.serce.jnrfuse.struct.FileStat;
 
 public class FsTree {
 
-    static private AntidoteClient antidote = new AntidoteClient(new Host("127.0.0.1", 8087));
-    static protected Bucket<String> bucket = Bucket.create("fsBucket");
+    static private AntidoteClient antidote;
+    static protected Bucket<String> bucket;
 
+    static private String BUCKET_LABEL = "fsBucket";
     static private String DIRECTORY_MARKER = "DM";
     static private String NO_FILE_MARKER = "";
+
+    public static void initFsTree(String antidoteAdd) {
+        String[] addrParts = antidoteAdd.split(":");
+        antidote = new AntidoteClient(new Host(addrParts[0], Integer.parseInt(addrParts[1])));
+        bucket = Bucket.create(BUCKET_LABEL);
+    }
 
     public static class Directory extends FsElement {
         public MapRef<String> dirMapRef;
@@ -65,7 +72,7 @@ public class FsTree {
                 else {
                     parent.deleteChild(this);
                     return null;
-                }                    
+                }
             }
 
             synchronized (this) {
@@ -108,7 +115,7 @@ public class FsTree {
 
         public synchronized void read(Pointer buf, FuseFillDir filler) {
             MapReadResult<String> res = dirMapRef.read(antidote.noTransaction());
-            for (String element : res.keySet()) 
+            for (String element : res.keySet())
                 if (!element.equals(DIRECTORY_MARKER))
                     filler.apply(buf, element, null, 0);
         }

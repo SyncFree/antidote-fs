@@ -17,10 +17,11 @@ import ru.serce.jnrfuse.struct.BaseFsTest;
 public class AntidoteFsTest extends BaseFsTest {
 
     private static String TEST_ROOT_DIR = "antidote-fs";
+    private static String TEST_ANTIDOTE_ADDR = "127.0.0.1:8087";
 
     @Test
     public void basicTest() throws Exception {
-        AntidoteFs afs = new AntidoteFs();
+        AntidoteFs afs = new AntidoteFs(TEST_ANTIDOTE_ADDR);
         Path tmpDir = Files.createTempDirectory(TEST_ROOT_DIR);
         blockingMount(afs, tmpDir);
 
