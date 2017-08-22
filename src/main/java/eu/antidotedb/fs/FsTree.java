@@ -10,7 +10,6 @@ import eu.antidotedb.client.Host;
 import eu.antidotedb.client.MapKey;
 import eu.antidotedb.client.MapRef;
 import eu.antidotedb.client.MapRef.MapReadResult;
-import eu.antidotedb.client.ValueCoder;
 import jnr.ffi.Pointer;
 import ru.serce.jnrfuse.FuseFillDir;
 import ru.serce.jnrfuse.struct.FileStat;
@@ -50,15 +49,16 @@ public class FsTree {
 
         public synchronized void add(FsElement p) {
             if (p instanceof File)
-                dirMapRef.register(p.name, ValueCoder.utf8String).set(antidote.noTransaction(),
-                        new String(((File) p).contents.array()));
+                dirMapRef.register(p.name).set(antidote.noTransaction(), new String(((File) p).contents.array()));
             else if (p instanceof Directory)
-                dirMapRef.map_aw(p.name, ValueCoder.utf8String).register(DIRECTORY_MARKER).set(antidote.noTransaction(),
-                        "");
+                dirMapRef.map_aw(p.name).register(DIRECTORY_MARKER).set(antidote.noTransaction(), "");
         }
 
         public synchronized void deleteChild(FsElement child) {
-            dirMapRef.removeKey(antidote.noTransaction(), MapKey.register(child.name));
+            if (child instanceof File)
+                dirMapRef.removeKey(antidote.noTransaction(), MapKey.register(child.name));
+            else if (child instanceof Directory)
+                dirMapRef.removeKey(antidote.noTransaction(), MapKey.map_aw(child.name));
         }
 
         public FsElement find(String path) {
@@ -105,12 +105,11 @@ public class FsTree {
         }
 
         public synchronized void mkdir(String lastComponent) {
-            dirMapRef.map_aw(lastComponent, ValueCoder.utf8String).register(DIRECTORY_MARKER)
-                    .set(antidote.noTransaction(), "");
+            dirMapRef.map_aw(lastComponent).register(DIRECTORY_MARKER).set(antidote.noTransaction(), "");
         }
 
         public synchronized void mkfile(String lastComponent) {
-            dirMapRef.register(lastComponent, ValueCoder.utf8String).set(antidote.noTransaction(), "");
+            dirMapRef.register(lastComponent).set(antidote.noTransaction(), "");
         }
 
         public synchronized void read(Pointer buf, FuseFillDir filler) {
