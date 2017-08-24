@@ -17,8 +17,6 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.junit.AfterClass;
@@ -30,11 +28,10 @@ import com.palantir.docker.compose.DockerComposeRule;
 import com.palantir.docker.compose.connection.DockerPort;
 import com.palantir.docker.compose.connection.waiting.HealthChecks;
 
-public class AntidoteFsTest {
+public class AntidoteFsTest extends AntidoteFsAbstractTest {
 
     private static String TEST_ROOT_DIR = "antidote-fs";
 
-    private static DockerPort antidoteContainer;
     private static AntidoteFs afs;
     private static Path rootDir;
 
@@ -45,17 +42,10 @@ public class AntidoteFsTest {
 
     @BeforeClass
     public static void mountFs() throws IOException, InterruptedException {
-        antidoteContainer = docker.containers().container("antidote").port(8087);
+        DockerPort antidoteContainer = docker.containers().container("antidote").port(8087);
         afs = new AntidoteFs(antidoteContainer.inFormat("$HOST:$EXTERNAL_PORT"));
         rootDir = Files.createTempDirectory(TEST_ROOT_DIR);
-
-        // blocking mount
-        CountDownLatch latch = new CountDownLatch(1);
-        new Thread(() -> {
-            afs.mount(rootDir, false, true);
-            latch.countDown();
-        }).start();
-        latch.await(1, TimeUnit.MINUTES);
+        blockingMount(afs, rootDir);
     }
 
     @AfterClass
@@ -65,16 +55,19 @@ public class AntidoteFsTest {
 
     @Test
     public void basicFileCrudTest() throws Exception {
-        File fileOne = new File(rootDir.toAbsolutePath() + File.pathSeparator + "file1");
+        String content1 = getRandomString();
+        String content2 = getRandomString();
+        
+        File fileOne = new File(rootDir.toAbsolutePath() + File.separator + getRandomString());
         assertFalse("file mustn't exist", fileOne.exists());
         assertTrue("file hasn't been created", fileOne.createNewFile());
         try (PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(fileOne)))) {
-            writer.print("test1");
-            writer.print("test2");
+            writer.print(content1);
+            writer.print(content2);
         }
 
         String text = Files.lines(fileOne.toPath()).collect(Collectors.joining());
-        assertEquals("file content doesn't match what was written", "test1test2", text);
+        assertEquals("file content doesn't match what was written", content1 + content2, text);
 
         assertTrue("file can't be deleted", fileOne.delete());
         assertFalse("file mustn't exist", fileOne.exists());
@@ -84,15 +77,15 @@ public class AntidoteFsTest {
     public void basicDirCrudTest() throws Exception {
         FileAttribute<Set<PosixFilePermission>> attr = PosixFilePermissions
                 .asFileAttribute(PosixFilePermissions.fromString("rwxr-x---"));
-        Path newdirPath = Files.createDirectory(Paths.get(rootDir.toAbsolutePath().toString(), "newdir"), attr);
+        Path newdirPath = Files.createDirectory(Paths.get(rootDir.toAbsolutePath().toString(), getRandomString()), attr);
         File newdir = new File(newdirPath.toString());
         assertTrue("directory hasn't been created", newdir.isDirectory() && newdir.exists());
 
         HashSet<Path> children = new HashSet<Path>();
-        children.add(Files.createFile(Paths.get(newdir.getAbsolutePath(), "file1"), attr));
-        children.add(Files.createFile(Paths.get(newdir.getAbsolutePath(), "file2"), attr));
-        children.add(Files.createFile(Paths.get(newdir.getAbsolutePath(), "file3"), attr));
-        children.add(Files.createDirectory(Paths.get(newdir.getAbsolutePath(), "subdir"), attr));
+        children.add(Files.createFile(Paths.get(newdir.getAbsolutePath(), getRandomString()), attr));
+        children.add(Files.createFile(Paths.get(newdir.getAbsolutePath(), getRandomString()), attr));
+        children.add(Files.createFile(Paths.get(newdir.getAbsolutePath(), getRandomString()), attr));
+        children.add(Files.createDirectory(Paths.get(newdir.getAbsolutePath(), getRandomString()), attr));
 
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(newdirPath)) {
             int count = 0;
