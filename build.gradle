@@ -12,7 +12,7 @@ repositories {
 }
 
 dependencies {
-    compile 'eu.antidotedb:antidote-java-client:0.0.6'
+    compile 'eu.antidotedb:antidote-java-client:0.1.0'
     compile 'com.github.serceman:jnr-fuse:0.4.1'
     compile 'com.beust:jcommander:1.72'
     

@@ -1,73 +1,81 @@
 package eu.antidotedb.fs;
 
 import java.io.UnsupportedEncodingException;
+import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 
 import eu.antidotedb.antidotepb.AntidotePB.CRDT_type;
 import eu.antidotedb.client.AntidoteClient;
 import eu.antidotedb.client.Bucket;
-import eu.antidotedb.client.Host;
+import eu.antidotedb.client.Key;
 import eu.antidotedb.client.MapKey;
-import eu.antidotedb.client.MapRef;
-import eu.antidotedb.client.MapRef.MapReadResult;
+import eu.antidotedb.client.MapKey.MapReadResult;
 import jnr.ffi.Pointer;
 import ru.serce.jnrfuse.FuseFillDir;
 import ru.serce.jnrfuse.struct.FileStat;
 
-//XXX can't create empty file (not distinguishable from not present file when reading)
-//XXX can't create an empty map: must create a dummy register in it
+import static eu.antidotedb.client.Key.*;
+
+// XXX Quirky behaviours in current Antidote implementation:
+// a. can't create an empty register (it's not distinguishable from not existing one when reading)
+// b. can't create an empty map: must create a dummy register in it
 
 public class FsTree {
 
     static private AntidoteClient antidote;
-    static protected Bucket<String> bucket;
+    static private Bucket bucket;
 
-    static private String BUCKET_LABEL = "fsBucket";
+    static private String BUCKET_LABEL = "antidote-fs";
+
+    // name of register used as marker to differentiate empty maps (folders) from
+    // not existing ones
     static private String DIRECTORY_MARKER = "DM";
-    static private String NO_FILE_MARKER = "";
 
     public static void initFsTree(String antidoteAdd) {
         String[] addrParts = antidoteAdd.split(":");
-        antidote = new AntidoteClient(new Host(addrParts[0], Integer.parseInt(addrParts[1])));
-        bucket = Bucket.create(BUCKET_LABEL);
+        antidote = new AntidoteClient(new InetSocketAddress(addrParts[0], Integer.parseInt(addrParts[1])));
+        bucket = Bucket.bucket(BUCKET_LABEL);
     }
 
     public static class Directory extends FsElement {
-        public MapRef<String> dirMapRef;
+        public MapKey dirMap;
 
         public Directory(String name) {
             super(name);
-            dirMapRef = bucket.map_aw(name);
-            dirMapRef.register(DIRECTORY_MARKER).set(antidote.noTransaction(), "");
+            dirMap = map_aw(name);
+            bucket.update(antidote.noTransaction(), dirMap.update(register(DIRECTORY_MARKER).assign("")));
         }
 
         public Directory(String name, Directory parent) {
             super(name, parent);
-            dirMapRef = bucket.map_aw(name);
-            dirMapRef.register(DIRECTORY_MARKER).set(antidote.noTransaction(), "");
+            dirMap = map_aw(name);
+            bucket.update(antidote.noTransaction(), dirMap.update(register(DIRECTORY_MARKER).assign("")));
         }
 
         public synchronized void add(FsElement p) {
             if (p instanceof File)
-                dirMapRef.register(p.name).set(antidote.noTransaction(), new String(((File) p).contents.array()));
+                bucket.update(antidote.noTransaction(),
+                        dirMap.update(register(p.name).assign(new String(((File) p).contents.array()))));
             else if (p instanceof Directory)
-                dirMapRef.map_aw(p.name).register(DIRECTORY_MARKER).set(antidote.noTransaction(), "");
+                bucket.update(antidote.noTransaction(),
+                        dirMap.update(map_aw(p.name).update(register(DIRECTORY_MARKER).assign(""))));
         }
 
         public synchronized void deleteChild(FsElement child) {
             if (child instanceof File)
-                dirMapRef.removeKey(antidote.noTransaction(), MapKey.register(child.name));
+                bucket.update(antidote.noTransaction(), dirMap.removeKey(register(child.name)));
             else if (child instanceof Directory)
-                dirMapRef.removeKey(antidote.noTransaction(), MapKey.map_aw(child.name));
+                bucket.update(antidote.noTransaction(), dirMap.removeKey(map_aw(child.name)));
         }
 
         public FsElement find(String path) {
             while (path.startsWith("/"))
                 path = path.substring(1);
-            // it's this element
+
             if (path.equals(this.name) || path.isEmpty()) {
-                MapReadResult<String> res = dirMapRef.read(antidote.noTransaction());
-                if (res.keySet().contains(DIRECTORY_MARKER))
+                // it's this element
+                MapReadResult res = bucket.read(antidote.noTransaction(), dirMap);
+                if (res.keySet().contains(register(DIRECTORY_MARKER)))
                     return this;
                 else {
                     parent.deleteChild(this);
@@ -78,9 +86,9 @@ public class FsTree {
             synchronized (this) {
                 if (!path.contains("/")) {
                     // it's in this folder
-                    MapReadResult<String> res = dirMapRef.read(antidote.noTransaction());
-                    for (MapKey<String> key : res.mapKeySet())
-                        if (key.getKey().equals(path))
+                    MapReadResult res = bucket.read(antidote.noTransaction(), dirMap);
+                    for (Key<?> key : res.keySet())
+                        if (key.getKey().toStringUtf8().equals(path))
                             if (key.getType().equals(CRDT_type.AWMAP))
                                 return new Directory(path, this);
                             else if (key.getType().equals(CRDT_type.LWWREG))
@@ -90,9 +98,9 @@ public class FsTree {
                     // it's in a subfolder
                     String nextName = path.substring(0, path.indexOf("/"));
                     String rest = path.substring(path.indexOf("/"));
-                    MapReadResult<String> res = dirMapRef.read(antidote.noTransaction());
-                    for (MapKey<String> key : res.mapKeySet())
-                        if (key.getType().equals(CRDT_type.AWMAP) && nextName.equals(key.getKey()))
+                    MapReadResult res = bucket.read(antidote.noTransaction(), dirMap);
+                    for (Key<?> key : res.keySet())
+                        if (key.getType().equals(CRDT_type.AWMAP) && nextName.equals(key.getKey().toStringUtf8()))
                             return new Directory(nextName, this).find(rest);
                 }
             }
@@ -101,22 +109,23 @@ public class FsTree {
 
         @Override
         public void getattr(FileStat stat) {
-            stat.st_mode.set(FileStat.S_IFDIR | 0777);
+            stat.st_mode.set(FileStat.S_IFDIR | 0740);
         }
 
-        public synchronized void mkdir(String lastComponent) {
-            dirMapRef.map_aw(lastComponent).register(DIRECTORY_MARKER).set(antidote.noTransaction(), "");
+        public synchronized void mkdir(String newDirName) {
+            bucket.update(antidote.noTransaction(),
+                    dirMap.update(map_aw(newDirName).update(register(DIRECTORY_MARKER).assign(""))));
         }
 
         public synchronized void mkfile(String lastComponent) {
-            dirMapRef.register(lastComponent).set(antidote.noTransaction(), "");
+            bucket.update(antidote.noTransaction(), dirMap.update(register(lastComponent).assign("")));
         }
 
         public synchronized void read(Pointer buf, FuseFillDir filler) {
-            MapReadResult<String> res = dirMapRef.read(antidote.noTransaction());
-            for (String element : res.keySet())
-                if (!element.equals(DIRECTORY_MARKER))
-                    filler.apply(buf, element, null, 0);
+            MapReadResult res = bucket.read(antidote.noTransaction(), dirMap);
+            for (Key<?> key : res.keySet())
+                if (!key.getKey().toStringUtf8().equals(DIRECTORY_MARKER))
+                    filler.apply(buf, key.getKey().toStringUtf8(), null, 0);
         }
     }
 
@@ -146,24 +155,20 @@ public class FsTree {
                 path = path.substring(1);
             // it's this element
             if (path.equals(this.name)) {
-                String res = parent.dirMapRef.register(name).read(antidote.noTransaction());
-                if (!res.equals(NO_FILE_MARKER))
-                    return this;
-                else
-                    return null;
+                return this;
             } else
                 return null;
         }
 
         @Override
         public void getattr(FileStat stat) {
-            stat.st_mode.set(FileStat.S_IFREG | 0777);
-            String res = parent.dirMapRef.register(name).read(antidote.noTransaction());
+            stat.st_mode.set(FileStat.S_IFREG | 0740);
+            String res = bucket.read(antidote.noTransaction(), parent.dirMap).get(register(name));
             stat.st_size.set(res.getBytes().length);
         }
 
         public int read(Pointer buffer, long size, long offset) {
-            String res = parent.dirMapRef.register(name).read(antidote.noTransaction());
+            String res = bucket.read(antidote.noTransaction(), parent.dirMap).get(register(name));
             byte[] contentBytes = new byte[1];
             try {
                 contentBytes = res.getBytes("UTF-8");
@@ -188,7 +193,7 @@ public class FsTree {
         }
 
         public synchronized int write(Pointer buffer, long bufSize, long writeOffset) {
-            String res = parent.dirMapRef.register(name).read(antidote.noTransaction());
+            String res = bucket.read(antidote.noTransaction(), parent.dirMap).get(register(name));
             byte[] contentBytes = new byte[1];
             try {
                 contentBytes = res.getBytes("UTF-8");
@@ -210,7 +215,8 @@ public class FsTree {
                 contents.put(bytesToWrite);
                 contents.position(0); // Rewind
             }
-            parent.dirMapRef.register(name).set(antidote.noTransaction(), new String(contents.array()));
+            bucket.update(antidote.noTransaction(),
+                    parent.dirMap.update(register(name).assign(new String(contents.array()))));
             return (int) bufSize;
         }
     }
