@@ -1,6 +1,9 @@
 package eu.antidotedb.fs;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -27,6 +30,7 @@ import org.junit.Test;
 import com.palantir.docker.compose.DockerComposeRule;
 import com.palantir.docker.compose.connection.DockerPort;
 import com.palantir.docker.compose.connection.waiting.HealthChecks;
+
 
 public class AntidoteFsTest extends AntidoteFsAbstractTest {
 
@@ -105,5 +109,36 @@ public class AntidoteFsTest extends AntidoteFsAbstractTest {
         assertTrue("directory can't be deleted", newdir.delete());
         assertFalse("directory mustn't exist", newdir.exists());
     }
-
+    
+    /* Tests that objects embedded on maps in Antidote are actually deleted, and not just unlinked.
+    @Test
+    public void antidoteDeletionTest() throws Exception {
+        DockerPort antidoteContainer = docker.containers().container("antidote").port(8087);
+        Bucket<String> bucket = Bucket.create("test");
+        String[] addrParts = antidoteContainer.inFormat("$HOST:$EXTERNAL_PORT").split(":");
+        AntidoteClient antidote = new AntidoteClient(new Host(addrParts[0], Integer.parseInt(addrParts[1])));
+        
+        // create /ROOT/A/file1 /ROOT/A/B
+        MapRef<String> rootmap = bucket.map_aw("ROOT");
+        rootmap.map_aw("A").register("file1").set(antidote.noTransaction(), "");
+        rootmap.map_aw("A").map_aw("B").register("marker").set(antidote.noTransaction(), "");
+        
+        MapReadResult<String> res = rootmap.read(antidote.noTransaction());
+        assertTrue(res.keySet().contains("A"));
+        
+        // remove /ROOT/A
+        rootmap.removeKey(antidote.noTransaction(), MapKey.map_aw("A"));
+        res = rootmap.read(antidote.noTransaction());
+        assertFalse(res.keySet().contains("A"));
+        
+        // re-create /ROOT/A
+        rootmap.map_aw("A").register("file1").set(antidote.noTransaction(), "");
+        
+        // check that /ROOT/A/file1 /ROOT/A/B don't exist
+        res = rootmap.map_aw("A").read(antidote.noTransaction());
+        assertFalse(res.keySet().contains("B"));
+        assertFalse(res.keySet().contains("file1"));
+        //for (String element : res.keySet())
+        //    System.out.println(element);
+    }*/
 }
