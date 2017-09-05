@@ -17,11 +17,7 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.attribute.FileAttribute;
-import java.nio.file.attribute.PosixFilePermission;
-import java.nio.file.attribute.PosixFilePermissions;
 import java.util.HashSet;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.junit.AfterClass;
@@ -46,9 +42,6 @@ public class AntidoteFsTest extends AntidoteFsAbstractTest {
 
     private static AntidoteFs afs;
     private static Path rootDir;
-
-    private static FileAttribute<Set<PosixFilePermission>> defaultAttr = PosixFilePermissions
-            .asFileAttribute(PosixFilePermissions.fromString("rwxr-x---"));
 
     @ClassRule
     public static DockerComposeRule docker = DockerComposeRule.builder()
@@ -100,8 +93,7 @@ public class AntidoteFsTest extends AntidoteFsAbstractTest {
 
     @Test
     public void emptyDirectoryTest() throws Exception {
-        Path newdirPath = Files.createDirectory(Paths.get(rootDir.toAbsolutePath().toString(), getRandomString()),
-                defaultAttr);
+        Path newdirPath = Files.createDirectory(Paths.get(rootDir.toAbsolutePath().toString(), getRandomString()));
         File newdir = new File(newdirPath.toString());
         assertTrue("directory hasn't been created", newdir.isDirectory() && newdir.exists());
         assertTrue("directory can't be deleted", newdir.delete());
@@ -110,16 +102,15 @@ public class AntidoteFsTest extends AntidoteFsAbstractTest {
 
     @Test
     public void basicDirCrudTest() throws Exception {
-        Path newdirPath = Files.createDirectory(Paths.get(rootDir.toAbsolutePath().toString(), getRandomString()),
-                defaultAttr);
+        Path newdirPath = Files.createDirectory(Paths.get(rootDir.toAbsolutePath().toString(), getRandomString()));
         File newdir = new File(newdirPath.toString());
         assertTrue("directory hasn't been created", newdir.isDirectory());
 
         HashSet<Path> children = new HashSet<Path>();
-        children.add(Files.createFile(Paths.get(newdir.getAbsolutePath(), getRandomString()), defaultAttr));
-        children.add(Files.createFile(Paths.get(newdir.getAbsolutePath(), getRandomString()), defaultAttr));
-        children.add(Files.createFile(Paths.get(newdir.getAbsolutePath(), getRandomString()), defaultAttr));
-        children.add(Files.createDirectory(Paths.get(newdir.getAbsolutePath(), getRandomString()), defaultAttr));
+        children.add(Files.createFile(Paths.get(newdir.getAbsolutePath(), getRandomString())));
+        children.add(Files.createFile(Paths.get(newdir.getAbsolutePath(), getRandomString())));
+        children.add(Files.createFile(Paths.get(newdir.getAbsolutePath(), getRandomString())));
+        children.add(Files.createDirectory(Paths.get(newdir.getAbsolutePath(), getRandomString())));
 
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(newdirPath)) {
             int count = 0;
@@ -145,10 +136,9 @@ public class AntidoteFsTest extends AntidoteFsAbstractTest {
         String content1 = getRandomString();
         String content2 = getRandomString();
 
-        Path newdirPath = Files.createDirectory(Paths.get(rootDir.toAbsolutePath().toString(), getRandomString()),
-                defaultAttr);
-        File newdir = new File(newdirPath.toString());
-        assertTrue("directory hasn't been created", newdir.isDirectory());
+        Path dirPath = Files.createDirectory(Paths.get(rootDir.toAbsolutePath().toString(), getRandomString()));
+        File dir = new File(dirPath.toString());
+        assertTrue("directory hasn't been created", dir.isDirectory());
 
         File fileOne = new File(rootDir.toAbsolutePath() + File.separator + getRandomString());
         assertTrue("file hasn't been created", fileOne.createNewFile());
@@ -159,8 +149,7 @@ public class AntidoteFsTest extends AntidoteFsAbstractTest {
 
         // rename file inside the same directory
         File newFile = new File(rootDir.toAbsolutePath().toString() + File.separator + getRandomString());
-        Files.move(fileOne.toPath(),
-                Paths.get(rootDir.toAbsolutePath().toString() + File.separator + newFile.getName()));
+        Files.move(fileOne.toPath(), fileOne.toPath().resolveSibling(newFile.getName()));
 
         // the new file exists
         assertTrue("file was not created", newFile.exists());
@@ -171,15 +160,57 @@ public class AntidoteFsTest extends AntidoteFsAbstractTest {
         assertFalse("file mustn't exist", fileOne.exists());
 
         // mv file into dir
-        Files.move(newFile.toPath(), Paths.get(newdir.toPath().toString() + File.separator + newFile.getName()));
+        Files.move(newFile.toPath(), dirPath.resolve(newFile.getName()));
 
         // the new file exists
-        assertTrue(newdir.listFiles()[0].getName().equals(newFile.getName()));
+        assertTrue(dir.listFiles()[0].getName().equals(newFile.getName()));
         // its content is the same as the original
-        text = Files.lines(newdir.listFiles()[0].toPath()).collect(Collectors.joining());
+        text = Files.lines(dir.listFiles()[0].toPath()).collect(Collectors.joining());
         assertEquals("file content doesn't match what was written", content1 + content2, text);
         // the original file is not there anymore
         assertFalse("file mustn't exist", newFile.exists());
+        
+        assertTrue("directory can't be deleted", dir.delete());
+        assertFalse("directory mustn't exist", dir.exists());
+        
+        // XXX test ATOMIC_MOVE and REPLACE_EXISTING options of Files.move
+    }
+    
+    @Test
+    public void mvEmptyDirTest() throws Exception {
+        Path dirPath1 = Files.createDirectory(Paths.get(rootDir.toAbsolutePath().toString(), getRandomString()));
+        File dir1 = new File(dirPath1.toString());
+        assertTrue("directory hasn't been created", dir1.isDirectory());
+        
+        Path dir2Path = Files.createDirectory(Paths.get(rootDir.toAbsolutePath().toString(), getRandomString()));
+        File dir2 = new File(dir2Path.toString());
+        assertTrue("directory hasn't been created", dir2.isDirectory());
+        
+        // rename empty directory 
+        File newDir = new File(rootDir.toAbsolutePath().toString() + File.separator + getRandomString());
+        Path newDirPath = Files.move(dirPath1, dirPath1.resolveSibling(newDir.getName()));
+        // the new dir exists
+        assertTrue("directory was not created", newDir.isDirectory());
+        // the original directory is not there anymore
+        assertFalse("directory mustn't exist", dir1.exists());
+        
+        // move empty directory in another directory
+        Path newDir1Path = Files.move(newDirPath, dir2Path.resolve(newDir.getName()));
+        File newDir1 = new File(newDir1Path.toString());
+        // the new dir exists
+        assertTrue("directory was not created", newDir1.isDirectory());
+        // the original directory is not there anymore
+        assertFalse("directory mustn't exist", newDir.exists());
+
+        assertTrue("directory can't be deleted", dir2.delete());
+        assertFalse("directory mustn't exist", dir2.exists());
+        
+        // TODO test ATOMIC_MOVE and REPLACE_EXISTING options of Files.move
+    }
+    
+    @Test
+    public void mvNonEmptyDir() throws Exception {
+        
     }
 
     /*
