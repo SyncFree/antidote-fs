@@ -22,11 +22,13 @@ import ru.serce.jnrfuse.struct.FileStat;
 import ru.serce.jnrfuse.struct.FuseFileInfo;
 
 /**
- * An AntidoteFs instance mounts and manages a single mount point of an Antidote-based file system.
- * Its command line parameters are:
+ * An AntidoteFs instance mounts and manages a single mount point of an
+ * Antidote-based file system. Its command line parameters are:
  * <ul>
- * <li>-d / --dir: the path of the local mount point (if not existing, it will be created)</li>
- * <li>-a / --antidote: the address of the Antidote database, formatted as &lt;IPAddress:Port&gt;</li>
+ * <li>-d / --dir: the path of the local mount point (if not existing, it will
+ * be created)</li>
+ * <li>-a / --antidote: the address of the Antidote database, formatted as
+ * &lt;IPAddress:Port&gt;</li>
  * </ul>
  */
 public class AntidoteFs extends FuseStubFS {
@@ -47,7 +49,7 @@ public class AntidoteFs extends FuseStubFS {
 
     @Override
     public int create(String path, @mode_t long mode, FuseFileInfo fi) {
-        //System.out.println("**** CREATE " + path);
+        // System.out.println("**** CREATE " + path);
         if (getFsElement(path) != null)
             return -ErrorCodes.EEXIST();
 
@@ -61,7 +63,7 @@ public class AntidoteFs extends FuseStubFS {
 
     @Override
     public int getattr(String path, FileStat stat) {
-        //System.out.println("**** GETATTR " + path);
+        // System.out.println("**** GETATTR " + path);
         FsElement p = getFsElement(path);
         if (p != null) {
             p.getattr(stat);
@@ -90,7 +92,7 @@ public class AntidoteFs extends FuseStubFS {
 
     @Override
     public int mkdir(String path, @mode_t long mode) {
-        //System.out.println("**** MAKEDIR " + path);
+        // System.out.println("**** MAKEDIR " + path);
         if (getFsElement(path) != null)
             return -ErrorCodes.EEXIST();
 
@@ -104,7 +106,7 @@ public class AntidoteFs extends FuseStubFS {
 
     @Override
     public int read(String path, Pointer buf, @size_t long size, @off_t long offset, FuseFileInfo fi) {
-        //System.out.println("**** READ " + path);
+        // System.out.println("**** READ " + path);
         FsElement p = getFsElement(path);
         if (p == null)
             return -ErrorCodes.ENOENT();
@@ -116,7 +118,7 @@ public class AntidoteFs extends FuseStubFS {
 
     @Override
     public int readdir(String path, Pointer buf, FuseFillDir filter, @off_t long offset, FuseFileInfo fi) {
-        //System.out.println("**** READDIR " + path);
+        // System.out.println("**** READDIR " + path);
         FsElement p = getFsElement(path);
         if (p == null)
             return -ErrorCodes.ENOENT();
@@ -130,27 +132,35 @@ public class AntidoteFs extends FuseStubFS {
     }
 
     @Override
-    public int rename(String path, String newName) {
-        //System.out.println("**** RENAME " + path + " " + newName);
-        FsElement p = getFsElement(path);
-        if (p == null)
+    public int rename(String oldPath, String newPath) {
+        // System.out.println("**** RENAME " + path + " " + newName);
+        FsElement oldElement = getFsElement(oldPath);
+        if (oldElement == null)
             return -ErrorCodes.ENOENT();
 
-        FsElement newParent = getFsParentElement(newName);
+        FsElement newParent = getFsParentElement(newPath);
         if (newParent == null)
             return -ErrorCodes.ENOENT();
         if (!(newParent instanceof Directory))
             return -ErrorCodes.ENOTDIR();
 
-        p.delete();
-        p.rename(newName.substring(newName.lastIndexOf("/")));
-        ((Directory) newParent).add(p);
+        if (oldElement instanceof File) {
+            File newFile = new File((File) oldElement);
+            newFile.rename(getPathLastComponent(newPath));
+            ((Directory) newParent).add(newFile);
+        } else if (oldElement instanceof Directory) {
+            Directory newDir = new Directory((Directory) oldElement);
+            newDir.rename(getPathLastComponent(newPath));
+            ((Directory) newParent).add(newDir);
+        }
+        
+        oldElement.delete();
         return 0;
     }
 
     @Override
     public int rmdir(String path) {
-        //System.out.println("**** RMDIR " + path);
+        // System.out.println("**** RMDIR " + path);
         FsElement p = getFsElement(path);
         if (p == null)
             return -ErrorCodes.ENOENT();
@@ -161,10 +171,10 @@ public class AntidoteFs extends FuseStubFS {
         return 0;
     }
 
-    // XXX probably not needed
+    // XXX not commonly needed?
     @Override
     public int truncate(String path, long offset) {
-        //System.out.println("**** TRUNCATE " + path);
+        // System.out.println("**** TRUNCATE " + path);
         FsElement p = getFsElement(path);
         if (p == null)
             return -ErrorCodes.ENOENT();
@@ -177,7 +187,7 @@ public class AntidoteFs extends FuseStubFS {
 
     @Override
     public int unlink(String path) {
-        //System.out.println("**** UNLINK " + path);
+        // System.out.println("**** UNLINK " + path);
         FsElement p = getFsElement(path);
         if (p == null)
             return -ErrorCodes.ENOENT();
@@ -188,7 +198,7 @@ public class AntidoteFs extends FuseStubFS {
 
     @Override
     public int write(String path, Pointer buf, @size_t long size, @off_t long offset, FuseFileInfo fi) {
-        //System.out.println("**** WRITE " + path);
+        // System.out.println("**** WRITE " + path);
         FsElement p = getFsElement(path);
         if (p == null)
             return -ErrorCodes.ENOENT();
@@ -202,7 +212,7 @@ public class AntidoteFs extends FuseStubFS {
 
         Args ar = new Args();
         JCommander.newBuilder().addObject(ar).build().parse(args);
-         
+
         Path rootPath = Paths.get(ar.fsDir);
         try {
             if (Files.notExists(rootPath))

@@ -113,7 +113,7 @@ public class AntidoteFsTest extends AntidoteFsAbstractTest {
         Path newdirPath = Files.createDirectory(Paths.get(rootDir.toAbsolutePath().toString(), getRandomString()),
                 defaultAttr);
         File newdir = new File(newdirPath.toString());
-        assertTrue("directory hasn't been created", newdir.isDirectory() && newdir.exists());
+        assertTrue("directory hasn't been created", newdir.isDirectory());
 
         HashSet<Path> children = new HashSet<Path>();
         children.add(Files.createFile(Paths.get(newdir.getAbsolutePath(), getRandomString()), defaultAttr));
@@ -140,8 +140,51 @@ public class AntidoteFsTest extends AntidoteFsAbstractTest {
         assertFalse("directory mustn't exist", newdir.exists());
     }
 
-    /* Tests that objects embedded on maps in Antidote are actually deleted, 
-     * and not just unlinked.
+    @Test
+    public void mvFileTest() throws Exception {
+        String content1 = getRandomString();
+        String content2 = getRandomString();
+
+        Path newdirPath = Files.createDirectory(Paths.get(rootDir.toAbsolutePath().toString(), getRandomString()),
+                defaultAttr);
+        File newdir = new File(newdirPath.toString());
+        assertTrue("directory hasn't been created", newdir.isDirectory());
+
+        File fileOne = new File(rootDir.toAbsolutePath() + File.separator + getRandomString());
+        assertTrue("file hasn't been created", fileOne.createNewFile());
+        try (PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(fileOne)))) {
+            writer.print(content1);
+            writer.print(content2);
+        }
+
+        // rename file inside the same directory
+        File newFile = new File(rootDir.toAbsolutePath().toString() + File.separator + getRandomString());
+        Files.move(fileOne.toPath(),
+                Paths.get(rootDir.toAbsolutePath().toString() + File.separator + newFile.getName()));
+
+        // the new file exists
+        assertTrue("file was not created", newFile.exists());
+        // its content is the same as the original
+        String text = Files.lines(newFile.toPath()).collect(Collectors.joining());
+        assertEquals("file content doesn't match what was written", content1 + content2, text);
+        // the original file is not there anymore
+        assertFalse("file mustn't exist", fileOne.exists());
+
+        // mv file into dir
+        Files.move(newFile.toPath(), Paths.get(newdir.toPath().toString() + File.separator + newFile.getName()));
+
+        // the new file exists
+        assertTrue(newdir.listFiles()[0].getName().equals(newFile.getName()));
+        // its content is the same as the original
+        text = Files.lines(newdir.listFiles()[0].toPath()).collect(Collectors.joining());
+        assertEquals("file content doesn't match what was written", content1 + content2, text);
+        // the original file is not there anymore
+        assertFalse("file mustn't exist", newFile.exists());
+    }
+
+    /*
+     * Tests that objects embedded on maps in Antidote are actually deleted, and not
+     * just unlinked.
      */
     @Ignore
     @Test
