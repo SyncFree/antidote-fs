@@ -21,6 +21,8 @@ import ru.serce.jnrfuse.FuseStubFS;
 import ru.serce.jnrfuse.struct.FileStat;
 import ru.serce.jnrfuse.struct.FuseFileInfo;
 
+import static java.io.File.separator;
+
 /**
  * An AntidoteFs instance mounts and manages a single mount point of an
  * Antidote-based file system. Its command line parameters are:
@@ -74,16 +76,16 @@ public class AntidoteFs extends FuseStubFS {
 
     private String getPathLastComponent(String path) {
         // remove trailing '/'
-        while (path.substring(path.length() - 1).equals("/"))
+        while (path.substring(path.length() - 1).equals(separator))
             path = path.substring(0, path.length() - 1);
 
         if (path.isEmpty())
             return "";
-        return path.substring(path.lastIndexOf("/") + 1);
+        return path.substring(path.lastIndexOf(separator) + 1);
     }
 
     private FsElement getFsParentElement(String path) {
-        return rootDirectory.find(path.substring(0, path.lastIndexOf("/")));
+        return rootDirectory.find(path.substring(0, path.lastIndexOf(separator)));
     }
 
     private FsElement getFsElement(String path) {
@@ -125,6 +127,7 @@ public class AntidoteFs extends FuseStubFS {
         if (!(p instanceof Directory))
             return -ErrorCodes.ENOTDIR();
 
+        // XXX is this portable?
         filter.apply(buf, ".", null, 0);
         filter.apply(buf, "..", null, 0);
         ((Directory) p).read(buf, filter);
@@ -133,7 +136,7 @@ public class AntidoteFs extends FuseStubFS {
 
     @Override
     public int rename(String oldPath, String newPath) {
-        // System.out.println("**** RENAME " + path + " " + newName);
+        // System.out.println("**** RENAME " + oldPath + " " + newPath);
         FsElement oldElement = getFsElement(oldPath);
         if (oldElement == null)
             return -ErrorCodes.ENOENT();
@@ -209,23 +212,18 @@ public class AntidoteFs extends FuseStubFS {
     }
 
     public static void main(String[] args) {
-
         Args ar = new Args();
         JCommander.newBuilder().addObject(ar).build().parse(args);
-
         Path rootPath = Paths.get(ar.fsDir);
+        AntidoteFs stub = null;
         try {
             if (Files.notExists(rootPath))
                 Files.createDirectory(rootPath);
+            stub = new AntidoteFs(ar.antidoteAddress);
+            stub.mount(rootPath, true, true);
         } catch (IOException e) {
             e.printStackTrace();
             System.exit(-1);
-        }
-
-        AntidoteFs stub = null;
-        try {
-            stub = new AntidoteFs(ar.antidoteAddress);
-            stub.mount(rootPath, true, true);
         } finally {
             if (stub != null)
                 stub.umount();

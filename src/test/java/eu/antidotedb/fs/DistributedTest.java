@@ -20,7 +20,10 @@ import com.palantir.docker.compose.DockerComposeRule;
 import com.palantir.docker.compose.connection.DockerPort;
 import com.palantir.docker.compose.connection.State;
 
-public class AntidoteFsDistributedTest extends AntidoteFsAbstractTest {
+/**
+ * Test suite with distributed file system clients.
+ */
+public class DistributedTest extends AntidoteFsAbstractTest {
 
     private static String TEST_ROOT_DIR = "antidote-fs";
 
@@ -69,7 +72,7 @@ public class AntidoteFsDistributedTest extends AntidoteFsAbstractTest {
     }
 
     @Test
-    public void basicDistributedTest() throws Exception {
+    public void basicFileCrudTest() throws Exception {
         String fileName = getRandomString();
         String content1 = getRandomString();
         String content2 = getRandomString();
@@ -97,5 +100,4 @@ public class AntidoteFsDistributedTest extends AntidoteFsAbstractTest {
         String txtRead2 = Files.lines(fileOne2.toPath()).collect(Collectors.joining());
         assertEquals("file content doesn't match what was written", txtRead1, txtRead2);
     }
-
 }

@@ -1,8 +1,8 @@
 package eu.antidotedb.fs;
 
-import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
 
 import eu.antidotedb.antidotepb.AntidotePB.CRDT_type;
 import eu.antidotedb.client.AntidoteClient;
@@ -16,9 +16,13 @@ import ru.serce.jnrfuse.struct.FileStat;
 
 import static eu.antidotedb.client.Key.*;
 
-// XXX Quirky behaviours in current Antidote implementation:
-// a. can't create an empty register (it's not distinguishable from not existing one when reading)
-// b. can't create an empty map: must create a dummy register in it
+import static java.io.File.separator;
+
+/* XXX Quirky behaviours in current Antidote implementation:
+ * a. can't create an empty register (it's not distinguishable from not existing one when reading)
+ * b. can't create an empty map: must create a dummy register in it
+ * c. object keys are little more than labels rather than absolute references to (possibly nested) objects
+ */  
 
 public class FsTree {
 
@@ -27,8 +31,9 @@ public class FsTree {
 
     static private String BUCKET_LABEL = "antidote-fs";
 
-    // name of register used as marker to differentiate empty maps (folders) from
-    // not existing ones
+    /* name of register used as marker to differentiate empty maps 
+     * (folders) from not existing ones
+     */
     static private String DIRECTORY_MARKER = "DM";
 
     public static void initFsTree(String antidoteAdd) {
@@ -38,49 +43,55 @@ public class FsTree {
     }
 
     public static class Directory extends FsElement {
-        private MapKey dirMap;
+        private MapKey dirKey;
+        
+        public HashMap<String, FsElement> dir;
 
         public Directory(String name) {
             super(name);
-            dirMap = map_aw(name);
-            bucket.update(antidote.noTransaction(), dirMap.update(register(DIRECTORY_MARKER).assign("")));
+            dirKey = map_aw(name);
+            bucket.update(antidote.noTransaction(), dirKey.update(register(DIRECTORY_MARKER).assign("")));
         }
 
         public Directory(String name, Directory parent) {
             super(name, parent);
-            dirMap = map_aw(name);
-            bucket.update(antidote.noTransaction(), dirMap.update(register(DIRECTORY_MARKER).assign("")));
+            dirKey = map_aw(name);
+            bucket.update(antidote.noTransaction(), dirKey.update(register(DIRECTORY_MARKER).assign("")));
         }
         
         public Directory(Directory dir) {
             super(dir.name, dir.parent);
-            dirMap = map_aw(name);
-            bucket.update(antidote.noTransaction(), dirMap.update(register(DIRECTORY_MARKER).assign("")));
+            dirKey = map_aw(name);
+            bucket.update(antidote.noTransaction(), dirKey.update(register(DIRECTORY_MARKER).assign("")));
         }
 
         public synchronized void add(FsElement p) {
             if (p instanceof File)
                 bucket.update(antidote.noTransaction(),
-                        dirMap.update(register(p.name).assign(new String(((File) p).content.array()))));
-            else if (p instanceof Directory)
+                        dirKey.update(register(p.name).assign(new String(((File) p).content.array()))));
+            else if (p instanceof Directory) { //  recursive add
+                // create new map
                 bucket.update(antidote.noTransaction(),
-                        dirMap.update(map_aw(p.name).update(register(DIRECTORY_MARKER).assign(""))));
+                        dirKey.update(map_aw(p.name).update(register(DIRECTORY_MARKER).assign(""))));
+                // TODO recursively walk the original directory tree and recreate it into the new map
+               // walkTree(((Directory) p).dirKey, dirKey);
+            }
         }
 
         public synchronized void deleteChild(FsElement child) {
             if (child instanceof File)
-                bucket.update(antidote.noTransaction(), dirMap.removeKey(register(child.name)));
+                bucket.update(antidote.noTransaction(), dirKey.removeKey(register(child.name)));
             else if (child instanceof Directory)
-                bucket.update(antidote.noTransaction(), dirMap.removeKey(map_aw(child.name)));
+                bucket.update(antidote.noTransaction(), dirKey.removeKey(map_aw(child.name)));
         }
 
         public FsElement find(String path) {
-            while (path.startsWith("/"))
+            while (path.startsWith(separator))
                 path = path.substring(1);
 
             if (path.equals(this.name) || path.isEmpty()) {
                 // it's this element
-                MapReadResult res = bucket.read(antidote.noTransaction(), dirMap);
+                MapReadResult res = bucket.read(antidote.noTransaction(), dirKey);
                 if (res.keySet().contains(register(DIRECTORY_MARKER)))
                     return this;
                 else {
@@ -89,25 +100,25 @@ public class FsTree {
                 }
             }
 
-            if (!path.contains("/")) {
+            if (!path.contains(separator)) {
                 // it's in this folder
-                MapReadResult res = bucket.read(antidote.noTransaction(), dirMap);
+                MapReadResult res = bucket.read(antidote.noTransaction(), dirKey);
                 for (Key<?> key : res.keySet())
                     if (key.getKey().toStringUtf8().equals(path))
                         if (key.getType().equals(CRDT_type.AWMAP))
                             return new Directory(path, this);
                         else if (key.getType().equals(CRDT_type.LWWREG)) {
                             File f = new File(path, this);
-                            String filecontent = bucket.read(antidote.noTransaction(), this.dirMap).get(register(path));
+                            String filecontent = bucket.read(antidote.noTransaction(), dirKey).get(register(path));
                             f.setContent(filecontent.getBytes());
                             return f;
                         }
                 return null;
             } else {
                 // it's in a subfolder
-                String nextName = path.substring(0, path.indexOf("/"));
-                String rest = path.substring(path.indexOf("/"));
-                MapReadResult res = bucket.read(antidote.noTransaction(), dirMap);
+                String nextName = path.substring(0, path.indexOf(separator));
+                String rest = path.substring(path.indexOf(separator));
+                MapReadResult res = bucket.read(antidote.noTransaction(), dirKey);
                 for (Key<?> key : res.keySet())
                     if (key.getType().equals(CRDT_type.AWMAP) && nextName.equals(key.getKey().toStringUtf8()))
                         return new Directory(nextName, this).find(rest);
@@ -122,15 +133,15 @@ public class FsTree {
 
         public synchronized void mkdir(String newDirName) {
             bucket.update(antidote.noTransaction(),
-                    dirMap.update(map_aw(newDirName).update(register(DIRECTORY_MARKER).assign(""))));
+                    dirKey.update(map_aw(newDirName).update(register(DIRECTORY_MARKER).assign(""))));
         }
 
         public synchronized void mkfile(String lastComponent) {
-            bucket.update(antidote.noTransaction(), dirMap.update(register(lastComponent).assign("")));
+            bucket.update(antidote.noTransaction(), dirKey.update(register(lastComponent).assign("")));
         }
 
         public synchronized void read(Pointer buf, FuseFillDir filler) {
-            MapReadResult res = bucket.read(antidote.noTransaction(), dirMap);
+            MapReadResult res = bucket.read(antidote.noTransaction(), dirKey);
             for (Key<?> key : res.keySet())
                 if (!key.getKey().toStringUtf8().equals(DIRECTORY_MARKER))
                     filler.apply(buf, key.getKey().toStringUtf8(), null, 0);
@@ -168,7 +179,7 @@ public class FsTree {
         }
 
         public File find(String path) {
-            while (path.startsWith("/"))
+            while (path.startsWith(separator))
                 path = path.substring(1);
             // it's this element
             if (path.equals(this.name)) {
@@ -180,18 +191,14 @@ public class FsTree {
         @Override
         public void getattr(FileStat stat) {
             stat.st_mode.set(FileStat.S_IFREG | 0740);
-            String res = bucket.read(antidote.noTransaction(), parent.dirMap).get(register(name));
+            String res = bucket.read(antidote.noTransaction(), parent.dirKey).get(register(name));
             stat.st_size.set(res.getBytes().length);
         }
 
         public int read(Pointer buffer, long size, long offset) {
-            String res = bucket.read(antidote.noTransaction(), parent.dirMap).get(register(name));
-            byte[] contentBytes = new byte[1];
-            try {
-                contentBytes = res.getBytes("UTF-8");
-            } catch (UnsupportedEncodingException e) {
-                // Not going to happen
-            }
+            String res = bucket.read(antidote.noTransaction(), parent.dirKey).get(register(name));
+            
+            byte[] contentBytes = res.getBytes();
             ByteBuffer contents = ByteBuffer.wrap(contentBytes);
             int bytesToRead = (int) Math.min(res.getBytes().length - offset, size);
             byte[] bytesRead = new byte[bytesToRead];
@@ -209,12 +216,13 @@ public class FsTree {
             // XXX cut file to size (?)
         }
 
-        public synchronized int write(Pointer buffer, long bufSize, long writeOffset) {
-            String res = bucket.read(antidote.noTransaction(), parent.dirMap).get(register(name));
+        public int write(Pointer buffer, long bufSize, long writeOffset) {
+            String res = bucket.read(antidote.noTransaction(), parent.dirKey).get(register(name));
             byte[] contentBytes = res.getBytes();
             ByteBuffer contents = ByteBuffer.wrap(contentBytes);
             int maxWriteIndex = (int) (writeOffset + bufSize);
             byte[] bytesToWrite = new byte[(int) bufSize];
+            
             synchronized (this) {
                 if (maxWriteIndex > contents.capacity()) {
                     // Need to create a new, larger buffer
@@ -227,8 +235,9 @@ public class FsTree {
                 contents.put(bytesToWrite);
                 contents.position(0); // Rewind
             }
+            
             bucket.update(antidote.noTransaction(),
-                    parent.dirMap.update(register(name).assign(new String(contents.array()))));
+                    parent.dirKey.update(register(name).assign(new String(contents.array()))));
             return (int) bufSize;
         }
     }
@@ -258,7 +267,7 @@ public class FsTree {
         public abstract void getattr(FileStat stat);
 
         public void rename(String newName) {
-            while (newName.startsWith("/"))
+            while (newName.startsWith(separator))
                 newName = newName.substring(1);
             name = newName;
         }

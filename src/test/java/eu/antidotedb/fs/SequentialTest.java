@@ -1,17 +1,12 @@
 package eu.antidotedb.fs;
 
-import static eu.antidotedb.client.Key.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.net.InetSocketAddress;
 import java.nio.file.DirectoryIteratorException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
@@ -30,13 +25,10 @@ import com.palantir.docker.compose.DockerComposeRule;
 import com.palantir.docker.compose.connection.DockerPort;
 import com.palantir.docker.compose.connection.waiting.HealthChecks;
 
-import eu.antidotedb.client.AntidoteClient;
-import eu.antidotedb.client.Bucket;
-import eu.antidotedb.client.Key;
-import eu.antidotedb.client.MapKey;
-import eu.antidotedb.client.MapKey.MapReadResult;
-
-public class AntidoteFsTest extends AntidoteFsAbstractTest {
+/**
+ * Test suite on sequential file system behavior.
+ */
+public class SequentialTest extends AntidoteFsAbstractTest {
 
     private static String TEST_ROOT_DIR = "antidote-fs";
 
@@ -132,7 +124,7 @@ public class AntidoteFsTest extends AntidoteFsAbstractTest {
     }
 
     @Test
-    public void mvFileTest() throws Exception {
+    public void moveFileTest() throws Exception {
         String content1 = getRandomString();
         String content2 = getRandomString();
 
@@ -169,31 +161,31 @@ public class AntidoteFsTest extends AntidoteFsAbstractTest {
         assertEquals("file content doesn't match what was written", content1 + content2, text);
         // the original file is not there anymore
         assertFalse("file mustn't exist", newFile.exists());
-        
+
         assertTrue("directory can't be deleted", dir.delete());
         assertFalse("directory mustn't exist", dir.exists());
-        
+
         // XXX test ATOMIC_MOVE and REPLACE_EXISTING options of Files.move
     }
-    
+
     @Test
-    public void mvEmptyDirTest() throws Exception {
+    public void moveEmptyDirTest() throws Exception {
         Path dirPath1 = Files.createDirectory(Paths.get(rootDir.toAbsolutePath().toString(), getRandomString()));
         File dir1 = new File(dirPath1.toString());
         assertTrue("directory hasn't been created", dir1.isDirectory());
-        
+
         Path dir2Path = Files.createDirectory(Paths.get(rootDir.toAbsolutePath().toString(), getRandomString()));
         File dir2 = new File(dir2Path.toString());
         assertTrue("directory hasn't been created", dir2.isDirectory());
-        
-        // rename empty directory 
+
+        // rename empty directory
         File newDir = new File(rootDir.toAbsolutePath().toString() + File.separator + getRandomString());
         Path newDirPath = Files.move(dirPath1, dirPath1.resolveSibling(newDir.getName()));
         // the new dir exists
         assertTrue("directory was not created", newDir.isDirectory());
         // the original directory is not there anymore
         assertFalse("directory mustn't exist", dir1.exists());
-        
+
         // move empty directory in another directory
         Path newDir1Path = Files.move(newDirPath, dir2Path.resolve(newDir.getName()));
         File newDir1 = new File(newDir1Path.toString());
@@ -204,49 +196,42 @@ public class AntidoteFsTest extends AntidoteFsAbstractTest {
 
         assertTrue("directory can't be deleted", dir2.delete());
         assertFalse("directory mustn't exist", dir2.exists());
-        
+
         // TODO test ATOMIC_MOVE and REPLACE_EXISTING options of Files.move
     }
-    
+
     @Test
-    public void mvNonEmptyDir() throws Exception {
-        
-    }
+    public void moveNonEmptyDir() throws Exception {
+        String content1 = getRandomString();
+        String content2 = getRandomString();
 
-    /*
-     * Tests that objects embedded on maps in Antidote are actually deleted, and not
-     * just unlinked.
-     */
-    @Ignore
-    @Test
-    public void antidoteDeletionTest() throws Exception {
-        DockerPort antidoteContainer = docker.containers().container("antidote").port(8087);
-        Bucket bucket = Bucket.bucket("test");
-        String[] addrParts = antidoteContainer.inFormat("$HOST:$EXTERNAL_PORT").split(":");
-        AntidoteClient antidote = new AntidoteClient(
-                new InetSocketAddress(addrParts[0], Integer.parseInt(addrParts[1])));
+        Path dirPath1 = Files.createDirectory(Paths.get(rootDir.toAbsolutePath().toString(), getRandomString()));
+        File dir1 = new File(dirPath1.toString());
+        assertTrue("directory hasn't been created", dir1.isDirectory());
 
-        // create /ROOT/A/file1 /ROOT/A/B
-        // MapKey rootmap = bucket.update(antidote.noTransaction(), Key.map_aw("ROOT"));
-        MapKey rootmap = Key.map_aw("ROOT");
-        bucket.update(antidote.noTransaction(), rootmap.update(map_aw("A").update(register("file1").assign(""))));
-        bucket.update(antidote.noTransaction(),
-                rootmap.update(map_aw("A").update(map_aw("B").update(register("marker").assign("")))));
+        File fileOne = new File(dirPath1.toAbsolutePath() + File.separator + getRandomString());
+        assertTrue("file hasn't been created", fileOne.createNewFile());
+        try (PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(fileOne)))) {
+            writer.print(content1);
+            writer.print(content2);
+        }
 
-        MapReadResult res = bucket.read(antidote.noTransaction(), rootmap);
-        assertTrue(res.keySet().contains(map_aw("A")));
+        Path dir2Path = Files.createDirectory(Paths.get(rootDir.toAbsolutePath().toString(), getRandomString()));
+        File dir2 = new File(dir2Path.toString());
+        assertTrue("directory hasn't been created", dir2.isDirectory());
 
-        // remove /ROOT/A
-        bucket.update(antidote.noTransaction(), rootmap.removeKey(map_aw("A")));
-        res = bucket.read(antidote.noTransaction(), rootmap);
-        assertFalse(res.keySet().contains(map_aw("A")));
-
-        // re-create /ROOT/A
-        bucket.update(antidote.noTransaction(), rootmap.update(map_aw("A").update(register("marker").assign(""))));
-
-        // check that /ROOT/A/file1 /ROOT/A/B don't exist
-        res = bucket.read(antidote.noTransaction(), rootmap).get(map_aw("A"));
-        assertFalse(res.keySet().contains(map_aw("B")));
-        assertFalse(res.keySet().contains(register("file1")));
+        // rename non-empty directory
+        File newDir = new File(rootDir.toAbsolutePath().toString() + File.separator + getRandomString());
+        Path newDirPath = Files.move(dirPath1, dirPath1.resolveSibling(newDir.getName()));
+        // the new dir exists
+        assertTrue("directory was not created", newDir.isDirectory());
+        // the original directory is not there anymore
+        assertFalse("directory mustn't exist", dir1.exists());
+        // the content of the file inside the directory we moved is preserved
+        //String text = Files.lines(Paths.get(newDirPath.toAbsolutePath().toString(), fileOne.getName()))
+        //        .collect(Collectors.joining());
+        // TODO
+        //assertEquals("file content doesn't match what was written", content1 + content2, text);
+        // the original file is not there anymore
     }
 }
