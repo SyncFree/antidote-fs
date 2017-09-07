@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/SyncFree/antidote-fs.svg?branch=master)](https://travis-ci.org/SyncFree/antidote-fs)  
 
-A file system backed by [Antidote](http://syncfree.github.io/antidote/).  
+A FUSE file system backed by [Antidote](http://syncfree.github.io/antidote/).  
 **WARNING: work in progress, alpha quality.**
 
 ## Getting started
