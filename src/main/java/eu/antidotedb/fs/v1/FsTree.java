@@ -1,4 +1,4 @@
-package eu.antidotedb.fs;
+package eu.antidotedb.fs.v1;
 
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
