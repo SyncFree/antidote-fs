@@ -2,7 +2,6 @@ package eu.antidotedb.fs;
 
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.util.HashMap;
 
 import eu.antidotedb.antidotepb.AntidotePB.CRDT_type;
 import eu.antidotedb.client.AntidoteClient;
@@ -22,7 +21,7 @@ import static java.io.File.separator;
  * a. can't create an empty register (it's not distinguishable from not existing one when reading)
  * b. can't create an empty map: must create a dummy register in it
  * c. object keys are little more than labels rather than absolute references to (possibly nested) objects
- */  
+ */
 
 public class FsTree {
 
@@ -31,8 +30,9 @@ public class FsTree {
 
     static private String BUCKET_LABEL = "antidote-fs";
 
-    /* name of register used as marker to differentiate empty maps 
-     * (folders) from not existing ones
+    /*
+     * name of register used as marker to differentiate empty maps (folders) from
+     * not existing ones
      */
     static private String DIRECTORY_MARKER = "DM";
 
@@ -44,8 +44,6 @@ public class FsTree {
 
     public static class Directory extends FsElement {
         private MapKey dirKey;
-        
-        public HashMap<String, FsElement> dir;
 
         public Directory(String name) {
             super(name);
@@ -58,7 +56,7 @@ public class FsTree {
             dirKey = map_aw(name);
             bucket.update(antidote.noTransaction(), dirKey.update(register(DIRECTORY_MARKER).assign("")));
         }
-        
+
         public Directory(Directory dir) {
             super(dir.name, dir.parent);
             dirKey = map_aw(name);
@@ -69,12 +67,20 @@ public class FsTree {
             if (p instanceof File)
                 bucket.update(antidote.noTransaction(),
                         dirKey.update(register(p.name).assign(new String(((File) p).content.array()))));
-            else if (p instanceof Directory) { //  recursive add
+            else if (p instanceof Directory) { // recursive add
                 // create new map
                 bucket.update(antidote.noTransaction(),
                         dirKey.update(map_aw(p.name).update(register(DIRECTORY_MARKER).assign(""))));
-                // TODO recursively walk the original directory tree and recreate it into the new map
-               // walkTree(((Directory) p).dirKey, dirKey);
+                // recursively walk the original directory tree and recreate it into the new map
+                /*
+                 * XXX this is not implemented as currently Antidote keys don't allow for
+                 * recursion from arbitrary points in the nesting hierarchy since they don't
+                 * embed nesting information. As a result, a recursive copy would require to
+                 * duplicate and maintain the whole tree structure on the client side, which
+                 * conflicts with the fundamental benefit of this design of having the hierarchy
+                 * maintained by nested CRDTs on the server side. 
+                 * see https://github.com/SyncFree/antidote-java-client/issues/3
+                 */
             }
         }
 
@@ -163,7 +169,7 @@ public class FsTree {
             super(name);
             setContent(contentBytes);
         }
-        
+
         public File(File f) {
             super(f.name, f.parent);
             // deep copy of ByteBuffer
@@ -173,7 +179,7 @@ public class FsTree {
             f.content.rewind();
             content.flip();
         }
-        
+
         public void setContent(byte[] contentBytes) {
             content = ByteBuffer.wrap(contentBytes);
         }
@@ -197,7 +203,7 @@ public class FsTree {
 
         public int read(Pointer buffer, long size, long offset) {
             String res = bucket.read(antidote.noTransaction(), parent.dirKey).get(register(name));
-            
+
             byte[] contentBytes = res.getBytes();
             ByteBuffer contents = ByteBuffer.wrap(contentBytes);
             int bytesToRead = (int) Math.min(res.getBytes().length - offset, size);
@@ -222,7 +228,7 @@ public class FsTree {
             ByteBuffer contents = ByteBuffer.wrap(contentBytes);
             int maxWriteIndex = (int) (writeOffset + bufSize);
             byte[] bytesToWrite = new byte[(int) bufSize];
-            
+
             synchronized (this) {
                 if (maxWriteIndex > contents.capacity()) {
                     // Need to create a new, larger buffer
@@ -235,7 +241,7 @@ public class FsTree {
                 contents.put(bytesToWrite);
                 contents.position(0); // Rewind
             }
-            
+
             bucket.update(antidote.noTransaction(),
                     parent.dirKey.update(register(name).assign(new String(contents.array()))));
             return (int) bufSize;
