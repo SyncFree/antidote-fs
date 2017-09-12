@@ -3,6 +3,10 @@ apply plugin: 'application'
 
 mainClassName = 'eu.antidotedb.fs.AntidoteFs'
 
+group = 'eu.antidotedb'
+version = '0.9-indirection'
+sourceCompatibility = 1.8
+
 repositories {
     mavenLocal()
     jcenter()
