@@ -180,8 +180,9 @@ public class FsModel implements Runnable {
         // TODO handle other attributes
         String inodeKey = getInodeKey(path);
         MapReadResult res = bucket.read(antidote.noTransaction(), map_aw(inodeKey));
-        long mode = res.get(integer(MODE));
-        long size = res.get(integer(SIZE));
+        // XXX remove casting once IntegerKey typing is published 
+        long mode = (long) res.get(integer(MODE));
+        long size = (long) res.get(integer(SIZE));
         stat.st_size.set(size);
         if (inodeKey.startsWith(DIR_PREFIX))
             stat.st_mode.set(FileStat.S_IFDIR | mode);
