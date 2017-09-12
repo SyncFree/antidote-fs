@@ -8,7 +8,7 @@ A [FUSE][fuse-wiki] file system backed by [Antidote][antidote].
 
 ## Getting started
 
-Requirements: [JDK 8][jdk8], [Antidote][antidote-setup], [Fuse][fuse] (and [Docker][docker] for the tests).  
+Requirements: [JDK 8][jdk8], [Antidote][antidote-setup], [Fuse 2.9][fuse] (and [Docker][docker] for the tests).  
 To compile: `make` or `./gradlew build`.  
 
 Assuming an Antidote instance is reachable at `127.0.0.1:8087`,
