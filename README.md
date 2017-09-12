@@ -2,14 +2,14 @@
 
 [![Build Status](https://travis-ci.org/SyncFree/antidote-fs.svg?branch=master)](https://travis-ci.org/SyncFree/antidote-fs)  
 
-A FUSE file system backed by [Antidote](http://syncfree.github.io/antidote/).  
+A [FUSE][fuse-wiki] file system backed by [Antidote][antidote].  
 **WARNING: work in progress, alpha quality.**
+
 
 ## Getting started
 
-To compile:
-
-    make 
+Requirements: [JDK 8][jdk8], [Antidote][antidote-setup], [Fuse][fuse] (and [Docker][docker] for the tests).  
+To compile: `make` or `./gradlew build`.  
 
 Assuming an Antidote instance is reachable at `127.0.0.1:8087`,
 to mount the file system under `/tmp/mnt` on Linux just issue:
@@ -28,6 +28,15 @@ Some convenient make targets are available:
     # ./gradlew run -Dexec.args="-d /d1 -a 127.0.0.1:8087"
     make mount-fs
 
+
 ## Credits
 
-[RainbowFS](http://rainbowfs.lip6.fr/) research project.
+[RainbowFS][rainbowfs] research project.
+
+ [antidote]: http://syncfree.github.io/antidote/
+ [antidote-setup]: http://syncfree.github.io/antidote/setup.html
+ [docker]: https://www.docker.com/get-docker
+ [fuse]: https://github.com/libfuse/libfuse
+ [fuse-wiki]: https://en.wikipedia.org/wiki/Filesystem_in_Userspace
+ [jdk8]: http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html 
+ [rainbowfs]: http://rainbowfs.lip6.fr/
