@@ -112,7 +112,7 @@ public class SequentialTest extends AntidoteFsAbstractTest {
             assertTrue("count of created files does not match", children.size() == count);
         } catch (IOException | DirectoryIteratorException x) {
             x.printStackTrace();
-            fail("exception while listing the subdir");
+            fail("exception while listing the subdir: " + x.getMessage());
         }
 
         for (Path path : children)

@@ -18,8 +18,6 @@ import ru.serce.jnrfuse.FuseStubFS;
 import ru.serce.jnrfuse.struct.FileStat;
 import ru.serce.jnrfuse.struct.FuseFileInfo;
 
-import static java.io.File.separator;
-
 /**
  * An AntidoteFs instance mounts and manages a single mount point of an
  * Antidote-based file system. Its command line parameters are:
@@ -48,10 +46,10 @@ public class AntidoteFs extends FuseStubFS {
     @Override
     public int create(String path, @mode_t long mode, FuseFileInfo fi) {
         // System.out.println("**** CREATE " + path);
-        if (fs.getPath(path) != null)
+        if (fs.getInodeKey(path) != null)
             return -ErrorCodes.EEXIST();
 
-        if (fs.isDirectory(getParent(path))) {
+        if (fs.isDirectory(FsModel.getParentPath(path))) {
             fs.makeFile(path);
             return 0;
         } else
@@ -61,7 +59,7 @@ public class AntidoteFs extends FuseStubFS {
     @Override
     public int getattr(String path, FileStat stat) {
         // System.out.println("**** GETATTR " + path);
-        if (fs.getPath(path) != null) {
+        if (fs.getInodeKey(path) != null) {
             fs.getAttr(path, stat);
             return 0;
         } else
@@ -71,10 +69,10 @@ public class AntidoteFs extends FuseStubFS {
     @Override
     public int mkdir(String path, @mode_t long mode) {
         // System.out.println("**** MAKEDIR " + path);
-        if (fs.getPath(path) != null)
+        if (fs.getInodeKey(path) != null)
             return -ErrorCodes.EEXIST();
 
-        if (fs.isDirectory(getParent(path))) {
+        if (fs.isDirectory(FsModel.getParentPath(path))) {
             fs.makeDir(path);
             return 0;
         } else
@@ -85,7 +83,7 @@ public class AntidoteFs extends FuseStubFS {
     public int read(String path, Pointer buf, @size_t long size, @off_t long offset,
             FuseFileInfo fi) {
         // System.out.println("**** READ " + path);
-        if (fs.getPath(path) == null)
+        if (fs.getInodeKey(path) == null)
             return -ErrorCodes.ENOENT();
         if (fs.isDirectory(path))
             return -ErrorCodes.EISDIR();
@@ -97,7 +95,7 @@ public class AntidoteFs extends FuseStubFS {
     public int readdir(String path, Pointer buf, FuseFillDir filter, @off_t long offset,
             FuseFileInfo fi) {
         // System.out.println("**** READDIR " + path);
-        if (fs.getPath(path) == null)
+        if (fs.getInodeKey(path) == null)
             return -ErrorCodes.ENOENT();
         if (!fs.isDirectory(path))
             return -ErrorCodes.ENOTDIR();
@@ -111,12 +109,12 @@ public class AntidoteFs extends FuseStubFS {
     @Override
     public int rename(String oldPath, String newPath) {
         // System.out.println("**** RENAME " + oldPath + " " + newPath);
-        if (fs.getPath(oldPath) == null)
+        if (fs.getInodeKey(oldPath) == null)
             return -ErrorCodes.ENOENT();
 
-        if (fs.getPath(getParent(newPath)) == null)
+        if (fs.getInodeKey(FsModel.getParentPath(newPath)) == null)
             return -ErrorCodes.ENOENT();
-        if (!fs.isDirectory(getParent(newPath)))
+        if (!fs.isDirectory(FsModel.getParentPath(newPath)))
             return -ErrorCodes.ENOTDIR();
 
         fs.rename(oldPath, newPath);
@@ -126,7 +124,7 @@ public class AntidoteFs extends FuseStubFS {
     @Override
     public int rmdir(String path) {
         // System.out.println("**** RMDIR " + path);
-        if (fs.getPath(path) == null)
+        if (fs.getInodeKey(path) == null)
             return -ErrorCodes.ENOENT();
         if (!fs.isDirectory(path))
             return -ErrorCodes.ENOTDIR();
@@ -138,7 +136,7 @@ public class AntidoteFs extends FuseStubFS {
     @Override
     public int truncate(String path, long offset) {
         // System.out.println("**** TRUNCATE " + path);
-        if (fs.getPath(path) == null)
+        if (fs.getInodeKey(path) == null)
             return -ErrorCodes.ENOENT();
         if (fs.isDirectory(path))
             return -ErrorCodes.EISDIR();
@@ -150,7 +148,7 @@ public class AntidoteFs extends FuseStubFS {
     @Override
     public int unlink(String path) {
         // System.out.println("**** UNLINK " + path);
-        if (fs.getPath(path) == null)
+        if (fs.getInodeKey(path) == null)
             return -ErrorCodes.ENOENT();
 
         fs.removePath(path);
@@ -161,19 +159,12 @@ public class AntidoteFs extends FuseStubFS {
     public int write(String path, Pointer buf, @size_t long size, @off_t long offset,
             FuseFileInfo fi) {
         // System.out.println("**** WRITE " + path);
-        if (fs.getPath(path) == null)
+        if (fs.getInodeKey(path) == null)
             return -ErrorCodes.ENOENT();
         if (fs.isDirectory(path))
             return -ErrorCodes.EISDIR();
 
         return fs.writeFile(path, buf, size, offset);
-    }
-
-    private String getParent(String path) {
-        if (!path.substring(1).contains(separator)) // in the root folder
-            return separator;
-        else
-            return path.substring(0, path.lastIndexOf(separator));
     }
 
     public static void main(String[] args) {
