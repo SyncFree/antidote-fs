@@ -4,6 +4,7 @@ apply plugin: 'application'
 mainClassName = 'eu.antidotedb.fs.AntidoteFs'
 
 repositories {
+    mavenLocal()
     jcenter()
     
     maven {
@@ -22,8 +23,8 @@ dependencies {
 
 run {
     if(System.getProperty("exec.args") != null) {
-    	args System.getProperty("exec.args").split()
-	}
+        args System.getProperty("exec.args").split()
+    }
 }
 
 jar {
