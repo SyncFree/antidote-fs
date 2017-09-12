@@ -8,9 +8,6 @@ import java.nio.file.Paths;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 
-import eu.antidotedb.fs.FsTree.Directory;
-import eu.antidotedb.fs.FsTree.File;
-import eu.antidotedb.fs.FsTree.FsElement;
 import jnr.ffi.Pointer;
 import jnr.ffi.types.mode_t;
 import jnr.ffi.types.off_t;
@@ -42,173 +39,141 @@ public class AntidoteFs extends FuseStubFS {
         private String antidoteAddress;
     }
 
-    public Directory rootDirectory;
+    private FsModel fs;
 
     public AntidoteFs(String antidoteAddress) {
-        FsTree.initFsTree(antidoteAddress);
-        rootDirectory = new Directory("");
+        fs = new FsModel(antidoteAddress);
     }
 
     @Override
     public int create(String path, @mode_t long mode, FuseFileInfo fi) {
         // System.out.println("**** CREATE " + path);
-        if (getFsElement(path) != null)
+        if (fs.getPath(path) != null)
             return -ErrorCodes.EEXIST();
 
-        FsElement parent = getFsParentElement(path);
-        if (parent instanceof Directory) {
-            ((Directory) parent).mkfile(getPathLastComponent(path));
+        if (fs.isDirectory(getParent(path))) {
+            fs.makeFile(path);
             return 0;
-        }
-        return -ErrorCodes.ENOENT();
+        } else
+            return -ErrorCodes.ENOENT();
     }
 
     @Override
     public int getattr(String path, FileStat stat) {
         // System.out.println("**** GETATTR " + path);
-        FsElement p = getFsElement(path);
-        if (p != null) {
-            p.getattr(stat);
+        if (fs.getPath(path) != null) {
+            fs.getAttr(path, stat);
             return 0;
-        }
-        return -ErrorCodes.ENOENT();
-    }
-
-    private String getPathLastComponent(String path) {
-        // remove trailing '/'
-        while (path.substring(path.length() - 1).equals(separator))
-            path = path.substring(0, path.length() - 1);
-
-        if (path.isEmpty())
-            return "";
-        return path.substring(path.lastIndexOf(separator) + 1);
-    }
-
-    private FsElement getFsParentElement(String path) {
-        return rootDirectory.find(path.substring(0, path.lastIndexOf(separator)));
-    }
-
-    private FsElement getFsElement(String path) {
-        return rootDirectory.find(path);
+        } else
+            return -ErrorCodes.ENOENT();
     }
 
     @Override
     public int mkdir(String path, @mode_t long mode) {
         // System.out.println("**** MAKEDIR " + path);
-        if (getFsElement(path) != null)
+        if (fs.getPath(path) != null)
             return -ErrorCodes.EEXIST();
 
-        FsElement parent = getFsParentElement(path);
-        if (parent instanceof Directory) {
-            ((Directory) parent).mkdir(getPathLastComponent(path));
+        if (fs.isDirectory(getParent(path))) {
+            fs.makeDir(path);
             return 0;
-        }
-        return -ErrorCodes.ENOENT();
+        } else
+            return -ErrorCodes.ENOENT();
     }
 
     @Override
-    public int read(String path, Pointer buf, @size_t long size, @off_t long offset, FuseFileInfo fi) {
+    public int read(String path, Pointer buf, @size_t long size, @off_t long offset,
+            FuseFileInfo fi) {
         // System.out.println("**** READ " + path);
-        FsElement p = getFsElement(path);
-        if (p == null)
+        if (fs.getPath(path) == null)
             return -ErrorCodes.ENOENT();
-        if (!(p instanceof File))
+        if (fs.isDirectory(path))
             return -ErrorCodes.EISDIR();
 
-        return ((File) p).read(buf, size, offset);
+        return fs.readFile(path, buf, size, offset);
     }
 
     @Override
-    public int readdir(String path, Pointer buf, FuseFillDir filter, @off_t long offset, FuseFileInfo fi) {
+    public int readdir(String path, Pointer buf, FuseFillDir filter, @off_t long offset,
+            FuseFileInfo fi) {
         // System.out.println("**** READDIR " + path);
-        FsElement p = getFsElement(path);
-        if (p == null)
+        if (fs.getPath(path) == null)
             return -ErrorCodes.ENOENT();
-        if (!(p instanceof Directory))
+        if (!fs.isDirectory(path))
             return -ErrorCodes.ENOTDIR();
 
-        // XXX is this portable?
         filter.apply(buf, ".", null, 0);
         filter.apply(buf, "..", null, 0);
-        ((Directory) p).read(buf, filter);
+        fs.listDir(path, buf, filter);
         return 0;
     }
 
     @Override
     public int rename(String oldPath, String newPath) {
         // System.out.println("**** RENAME " + oldPath + " " + newPath);
-        FsElement oldElement = getFsElement(oldPath);
-        if (oldElement == null)
+        if (fs.getPath(oldPath) == null)
             return -ErrorCodes.ENOENT();
 
-        FsElement newParent = getFsParentElement(newPath);
-        if (newParent == null)
+        if (fs.getPath(getParent(newPath)) == null)
             return -ErrorCodes.ENOENT();
-        if (!(newParent instanceof Directory))
+        if (!fs.isDirectory(getParent(newPath)))
             return -ErrorCodes.ENOTDIR();
 
-        if (oldElement instanceof File) {
-            File newFile = new File((File) oldElement);
-            newFile.rename(getPathLastComponent(newPath));
-            ((Directory) newParent).add(newFile);
-        } else if (oldElement instanceof Directory) {
-            Directory newDir = new Directory((Directory) oldElement);
-            newDir.rename(getPathLastComponent(newPath));
-            ((Directory) newParent).add(newDir);
-        }
-        
-        oldElement.delete();
+        fs.rename(oldPath, newPath);
         return 0;
     }
 
     @Override
     public int rmdir(String path) {
         // System.out.println("**** RMDIR " + path);
-        FsElement p = getFsElement(path);
-        if (p == null)
+        if (fs.getPath(path) == null)
             return -ErrorCodes.ENOENT();
-        if (!(p instanceof Directory))
+        if (!fs.isDirectory(path))
             return -ErrorCodes.ENOTDIR();
 
-        p.delete();
+        fs.removePath(path);
         return 0;
     }
 
-    // XXX not commonly needed?
     @Override
     public int truncate(String path, long offset) {
         // System.out.println("**** TRUNCATE " + path);
-        FsElement p = getFsElement(path);
-        if (p == null)
+        if (fs.getPath(path) == null)
             return -ErrorCodes.ENOENT();
-        if (!(p instanceof File))
+        if (fs.isDirectory(path))
             return -ErrorCodes.EISDIR();
 
-        ((File) p).truncate(offset);
+        fs.truncate(path, offset);
         return 0;
     }
 
     @Override
     public int unlink(String path) {
         // System.out.println("**** UNLINK " + path);
-        FsElement p = getFsElement(path);
-        if (p == null)
+        if (fs.getPath(path) == null)
             return -ErrorCodes.ENOENT();
 
-        p.delete();
+        fs.removePath(path);
         return 0;
     }
 
     @Override
-    public int write(String path, Pointer buf, @size_t long size, @off_t long offset, FuseFileInfo fi) {
+    public int write(String path, Pointer buf, @size_t long size, @off_t long offset,
+            FuseFileInfo fi) {
         // System.out.println("**** WRITE " + path);
-        FsElement p = getFsElement(path);
-        if (p == null)
+        if (fs.getPath(path) == null)
             return -ErrorCodes.ENOENT();
-        if (!(p instanceof File))
+        if (fs.isDirectory(path))
             return -ErrorCodes.EISDIR();
 
-        return ((File) p).write(buf, size, offset);
+        return fs.writeFile(path, buf, size, offset);
+    }
+
+    private String getParent(String path) {
+        if (!path.substring(1).contains(separator)) // in the root folder
+            return separator;
+        else
+            return path.substring(0, path.lastIndexOf(separator));
     }
 
     public static void main(String[] args) {

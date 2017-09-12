@@ -1,9 +1,7 @@
 package eu.antidotedb.fs;
 
-import static eu.antidotedb.client.Key.map_aw;
-import static eu.antidotedb.client.Key.register;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static eu.antidotedb.client.Key.*;
+import static org.junit.Assert.*;
 
 import java.net.InetSocketAddress;
 import java.util.HashMap;
@@ -49,6 +47,22 @@ public class AntidoteTest {
         antidote = new AntidoteClient(new InetSocketAddress(addrParts[0], Integer.parseInt(addrParts[1])));
     }
     
+    @Ignore
+    @Test
+    public void readWriteInteger() throws Exception {
+        MapKey rootmap = Key.map_aw("ROOT");
+        AntidoteStaticTransaction tx = antidote.createStaticTransaction();
+        bucket.update(tx, rootmap.update(
+                integer("intreg").assign(10L)
+                ));
+        tx.commitTransaction();
+        
+        long res = (long) bucket.read(antidote.noTransaction(), rootmap).get(integer("intreg"));
+        assertEquals(10L, res);
+        long res1 = (long) bucket.read(antidote.noTransaction(), rootmap).get(integer("notexisting"));
+        assertEquals(0L, res1);
+    }
+    
     
     // Support classes to experiment with recursive visit of file system.
     class MyFsElement {
@@ -64,7 +78,7 @@ public class AntidoteTest {
         public String toString() { return "<File " + name +">"; }
     }
 
-    //@Ignore
+    @Ignore
     @Test
     public void copyTreeTest() throws Exception {
         // create /ROOT/A/file1 /ROOT/A/B /ROOT/A/B/file2

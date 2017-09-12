@@ -90,7 +90,7 @@ public class DistributedTest extends AntidoteFsAbstractTest {
 
         // read the file on the other mount point
         File fileOne2 = new File(rootDir2.toAbsolutePath() + File.separator + fileName);
-        int i = 2, wait = 50; // wait (i*wait) for propagation among fs local replicas
+        int i = FsModel.REFRESH_PERIOD + 1, wait = 1000; // wait (i*wait) for propagation among fs local replicas
         while (!fileOne2.exists() && i > 0) {
             Thread.sleep(wait);
             i--;

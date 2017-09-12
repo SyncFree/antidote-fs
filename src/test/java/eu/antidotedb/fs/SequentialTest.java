@@ -18,7 +18,6 @@ import java.util.stream.Collectors;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.palantir.docker.compose.DockerComposeRule;
