@@ -208,12 +208,10 @@ public class FsTree {
             ByteBuffer contents = ByteBuffer.wrap(contentBytes);
             int bytesToRead = (int) Math.min(res.getBytes().length - offset, size);
             byte[] bytesRead = new byte[bytesToRead];
-            synchronized (this) {
-                contents.position((int) offset);
-                contents.get(bytesRead, 0, bytesToRead);
-                buffer.put(0, bytesRead, 0, bytesToRead);
-                contents.position(0); // Rewind
-            }
+            contents.position((int) offset);
+            contents.get(bytesRead, 0, bytesToRead);
+            buffer.put(0, bytesRead, 0, bytesToRead);
+            contents.position(0); // Rewind
             return bytesToRead;
         }
 
@@ -229,18 +227,16 @@ public class FsTree {
             int maxWriteIndex = (int) (writeOffset + bufSize);
             byte[] bytesToWrite = new byte[(int) bufSize];
 
-            synchronized (this) {
-                if (maxWriteIndex > contents.capacity()) {
-                    // Need to create a new, larger buffer
-                    ByteBuffer newContents = ByteBuffer.allocate(maxWriteIndex);
-                    newContents.put(contents);
-                    contents = newContents;
-                }
-                buffer.get(0, bytesToWrite, 0, (int) bufSize);
-                contents.position((int) writeOffset);
-                contents.put(bytesToWrite);
-                contents.position(0); // Rewind
+            if (maxWriteIndex > contents.capacity()) {
+                // Need to create a new, larger buffer
+                ByteBuffer newContents = ByteBuffer.allocate(maxWriteIndex);
+                newContents.put(contents);
+                contents = newContents;
             }
+            buffer.get(0, bytesToWrite, 0, (int) bufSize);
+            contents.position((int) writeOffset);
+            contents.put(bytesToWrite);
+            contents.position(0); // Rewind
 
             bucket.update(antidote.noTransaction(),
                     parent.dirKey.update(register(name).assign(new String(contents.array()))));
