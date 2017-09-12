@@ -12,6 +12,9 @@ compile:
 test:
 	$(GRADLE) check
 
+clean:
+	$(GRADLE) clean
+
 
 start-antidote-docker:
 	docker run -d --rm -it -p "8087:8087" antidotedb/antidote
