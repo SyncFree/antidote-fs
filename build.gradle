@@ -23,6 +23,7 @@ dependencies {
     
     testCompile 'junit:junit:4.12'
     testCompile 'com.palantir.docker.compose:docker-compose-rule-junit4:0.32.0'
+    testCompile 'commons-io:commons-io:2.5'
 }
 
 run {

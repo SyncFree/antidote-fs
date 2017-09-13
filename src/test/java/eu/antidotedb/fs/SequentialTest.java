@@ -15,10 +15,13 @@ import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.stream.Collectors;
 
+import org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
+
+import static java.io.File.separator;
 
 import com.palantir.docker.compose.DockerComposeRule;
 import com.palantir.docker.compose.connection.DockerPort;
@@ -29,13 +32,13 @@ import com.palantir.docker.compose.connection.waiting.HealthChecks;
  */
 public class SequentialTest extends AntidoteFsAbstractTest {
 
-    private static String TEST_ROOT_DIR = "antidote-fs";
+    private static String           TEST_ROOT_DIR = "antidote-fs";
 
-    private static AntidoteFs afs;
-    private static Path rootDir;
+    private static AntidoteFs       afs;
+    private static Path             rootDir;
 
     @ClassRule
-    public static DockerComposeRule docker = DockerComposeRule.builder()
+    public static DockerComposeRule docker        = DockerComposeRule.builder()
             .file("src/test/resources/docker-antidote-single_host.yml")
             .waitingForService("antidote", HealthChecks.toHaveAllPortsOpen()).build();
 
@@ -57,53 +60,55 @@ public class SequentialTest extends AntidoteFsAbstractTest {
         String content1 = getRandomString();
         String content2 = getRandomString();
 
-        File fileOne = new File(rootDir.toAbsolutePath() + File.separator + getRandomString());
-        assertFalse("file mustn't exist", fileOne.exists());
-        assertTrue("file hasn't been created", fileOne.createNewFile());
-        try (PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(fileOne)))) {
+        File file = new File(rootDir.toAbsolutePath() + separator + getRandomString());
+        assertFalse("file mustn't exist", file.exists());
+        assertTrue("file hasn't been created", file.createNewFile());
+        try (PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(file)))) {
             writer.print(content1);
             writer.print(content2);
         }
 
-        String text = Files.lines(fileOne.toPath()).collect(Collectors.joining());
+        String text = Files.lines(file.toPath()).collect(Collectors.joining());
         assertEquals("file content doesn't match what was written", content1 + content2, text);
 
-        assertTrue("file can't be deleted", fileOne.delete());
-        assertFalse("file mustn't exist", fileOne.exists());
+        assertTrue("file can't be deleted", file.delete());
+        assertFalse("file mustn't exist", file.exists());
     }
 
     @Test
     public void emptyFileTest() throws Exception {
-        File fileOne = new File(rootDir.toAbsolutePath() + File.separator + getRandomString());
-        assertFalse("file mustn't exist", fileOne.exists());
-        assertTrue("file hasn't been created", fileOne.createNewFile());
-        assertTrue("file must exist", fileOne.exists());
-        assertTrue("file can't be deleted", fileOne.delete());
-        assertFalse("file mustn't exist", fileOne.exists());
+        File file = new File(rootDir.toAbsolutePath() + separator + getRandomString());
+        assertFalse("file mustn't exist", file.exists());
+        assertTrue("file hasn't been created", file.createNewFile());
+        assertTrue("file must exist", file.exists());
+        assertTrue("file can't be deleted", file.delete());
+        assertFalse("file mustn't exist", file.exists());
     }
 
     @Test
     public void emptyDirectoryTest() throws Exception {
-        Path newdirPath = Files.createDirectory(Paths.get(rootDir.toAbsolutePath().toString(), getRandomString()));
-        File newdir = new File(newdirPath.toString());
-        assertTrue("directory hasn't been created", newdir.isDirectory() && newdir.exists());
-        assertTrue("directory can't be deleted", newdir.delete());
-        assertFalse("directory mustn't exist", newdir.exists());
+        Path dirPath = Files
+                .createDirectory(Paths.get(rootDir.toAbsolutePath().toString(), getRandomString()));
+        File dir = new File(dirPath.toString());
+        assertTrue("directory hasn't been created", dir.isDirectory() && dir.exists());
+        assertTrue("directory can't be deleted", dir.delete());
+        assertFalse("directory mustn't exist", dir.exists());
     }
 
     @Test
     public void basicDirCrudTest() throws Exception {
-        Path newdirPath = Files.createDirectory(Paths.get(rootDir.toAbsolutePath().toString(), getRandomString()));
-        File newdir = new File(newdirPath.toString());
-        assertTrue("directory hasn't been created", newdir.isDirectory());
+        Path dirPath = Files
+                .createDirectory(Paths.get(rootDir.toAbsolutePath().toString(), getRandomString()));
+        File dir = new File(dirPath.toString());
+        assertTrue("directory hasn't been created", dir.isDirectory());
 
         HashSet<Path> children = new HashSet<Path>();
-        children.add(Files.createFile(Paths.get(newdir.getAbsolutePath(), getRandomString())));
-        children.add(Files.createFile(Paths.get(newdir.getAbsolutePath(), getRandomString())));
-        children.add(Files.createFile(Paths.get(newdir.getAbsolutePath(), getRandomString())));
-        children.add(Files.createDirectory(Paths.get(newdir.getAbsolutePath(), getRandomString())));
+        children.add(Files.createFile(Paths.get(dir.getAbsolutePath(), getRandomString())));
+        children.add(Files.createFile(Paths.get(dir.getAbsolutePath(), getRandomString())));
+        children.add(Files.createFile(Paths.get(dir.getAbsolutePath(), getRandomString())));
+        children.add(Files.createDirectory(Paths.get(dir.getAbsolutePath(), getRandomString())));
 
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(newdirPath)) {
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(dirPath)) {
             int count = 0;
             for (Path file : stream) {
                 assertTrue(file.toString() + " was never created", children.contains(file));
@@ -115,11 +120,10 @@ public class SequentialTest extends AntidoteFsAbstractTest {
             fail("exception while listing the subdir: " + x.getMessage());
         }
 
+        FileUtils.deleteDirectory(dir);
+        assertFalse("directory mustn't exist", dir.exists());
         for (Path path : children)
-            path.toFile().delete();
-
-        assertTrue("directory can't be deleted", newdir.delete());
-        assertFalse("directory mustn't exist", newdir.exists());
+            assertFalse("file mustn't exist", path.toFile().exists());
     }
 
     @Test
@@ -127,20 +131,22 @@ public class SequentialTest extends AntidoteFsAbstractTest {
         String content1 = getRandomString();
         String content2 = getRandomString();
 
-        Path dirPath = Files.createDirectory(Paths.get(rootDir.toAbsolutePath().toString(), getRandomString()));
+        Path dirPath = Files
+                .createDirectory(Paths.get(rootDir.toAbsolutePath().toString(), getRandomString()));
         File dir = new File(dirPath.toString());
         assertTrue("directory hasn't been created", dir.isDirectory());
 
-        File fileOne = new File(rootDir.toAbsolutePath() + File.separator + getRandomString());
-        assertTrue("file hasn't been created", fileOne.createNewFile());
-        try (PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(fileOne)))) {
+        File file = new File(rootDir.toAbsolutePath() + separator + getRandomString());
+        assertTrue("file hasn't been created", file.createNewFile());
+        try (PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(file)))) {
             writer.print(content1);
             writer.print(content2);
         }
 
         // rename file inside the same directory
-        File newFile = new File(rootDir.toAbsolutePath().toString() + File.separator + getRandomString());
-        Files.move(fileOne.toPath(), fileOne.toPath().resolveSibling(newFile.getName()));
+        File newFile = new File(
+                rootDir.toAbsolutePath().toString() + separator + getRandomString());
+        Files.move(file.toPath(), file.toPath().resolveSibling(newFile.getName()));
 
         // the new file exists
         assertTrue("file was not created", newFile.exists());
@@ -148,7 +154,7 @@ public class SequentialTest extends AntidoteFsAbstractTest {
         String text = Files.lines(newFile.toPath()).collect(Collectors.joining());
         assertEquals("file content doesn't match what was written", content1 + content2, text);
         // the original file is not there anymore
-        assertFalse("file mustn't exist", fileOne.exists());
+        assertFalse("file mustn't exist", file.exists());
 
         // mv file into dir
         Files.move(newFile.toPath(), dirPath.resolve(newFile.getName()));
@@ -169,17 +175,20 @@ public class SequentialTest extends AntidoteFsAbstractTest {
 
     @Test
     public void moveEmptyDirTest() throws Exception {
-        Path dirPath1 = Files.createDirectory(Paths.get(rootDir.toAbsolutePath().toString(), getRandomString()));
-        File dir1 = new File(dirPath1.toString());
+        Path dir1Path = Files
+                .createDirectory(Paths.get(rootDir.toAbsolutePath().toString(), getRandomString()));
+        File dir1 = new File(dir1Path.toString());
         assertTrue("directory hasn't been created", dir1.isDirectory());
 
-        Path dir2Path = Files.createDirectory(Paths.get(rootDir.toAbsolutePath().toString(), getRandomString()));
+        Path dir2Path = Files
+                .createDirectory(Paths.get(rootDir.toAbsolutePath().toString(), getRandomString()));
         File dir2 = new File(dir2Path.toString());
         assertTrue("directory hasn't been created", dir2.isDirectory());
 
         // rename empty directory
-        File newDir = new File(rootDir.toAbsolutePath().toString() + File.separator + getRandomString());
-        Path newDirPath = Files.move(dirPath1, dirPath1.resolveSibling(newDir.getName()));
+        File newDir = new File(
+                rootDir.toAbsolutePath().toString() + separator + getRandomString());
+        Path newDirPath = Files.move(dir1Path, dir1Path.resolveSibling(newDir.getName()));
         // the new dir exists
         assertTrue("directory was not created", newDir.isDirectory());
         // the original directory is not there anymore
@@ -204,33 +213,51 @@ public class SequentialTest extends AntidoteFsAbstractTest {
         String content1 = getRandomString();
         String content2 = getRandomString();
 
-        Path dirPath1 = Files.createDirectory(Paths.get(rootDir.toAbsolutePath().toString(), getRandomString()));
-        File dir1 = new File(dirPath1.toString());
+        // dir1
+        Path dir1Path = Files
+                .createDirectory(Paths.get(rootDir.toAbsolutePath().toString(), getRandomString()));
+        File dir1 = new File(dir1Path.toString());
         assertTrue("directory hasn't been created", dir1.isDirectory());
-
-        File fileOne = new File(dirPath1.toAbsolutePath() + File.separator + getRandomString());
-        assertTrue("file hasn't been created", fileOne.createNewFile());
-        try (PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(fileOne)))) {
+        // file1 in dir1
+        File file1 = new File(dir1Path.toAbsolutePath() + separator + getRandomString());
+        assertTrue("file hasn't been created", file1.createNewFile());
+        try (PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(file1)))) {
             writer.print(content1);
             writer.print(content2);
         }
 
-        Path dir2Path = Files.createDirectory(Paths.get(rootDir.toAbsolutePath().toString(), getRandomString()));
-        File dir2 = new File(dir2Path.toString());
-        assertTrue("directory hasn't been created", dir2.isDirectory());
-
         // rename non-empty directory
-        File newDir = new File(rootDir.toAbsolutePath().toString() + File.separator + getRandomString());
-        Path newDirPath = Files.move(dirPath1, dirPath1.resolveSibling(newDir.getName()));
+        File newDir1 = new File(
+                rootDir.toAbsolutePath().toString() + separator + getRandomString());
+        Files.move(dir1Path, dir1Path.resolveSibling(newDir1.getName()));
         // the new dir exists
-        assertTrue("directory was not created", newDir.isDirectory());
+        assertTrue("directory was not created", newDir1.isDirectory());
         // the original directory is not there anymore
         assertFalse("directory mustn't exist", dir1.exists());
         // the content of the file inside the directory we moved is preserved
-        //String text = Files.lines(Paths.get(newDirPath.toAbsolutePath().toString(), fileOne.getName()))
-        //        .collect(Collectors.joining());
-        // TODO
-        //assertEquals("file content doesn't match what was written", content1 + content2, text);
+        String text = Files
+                .lines(Paths.get(newDir1.getAbsolutePath(), file1.getName()))
+                .collect(Collectors.joining());
+        assertEquals("file content doesn't match what was written", content1 +
+                content2, text);
         // the original file is not there anymore
+        assertFalse("file mustn't exist", file1.exists());
+
+        Path dir2Path = Files
+                .createDirectory(Paths.get(rootDir.toAbsolutePath().toString(), getRandomString()));
+        File dir2 = new File(dir2Path.toString());
+        assertTrue("directory hasn't been created", dir2.isDirectory());
+
+        // move non-empty directory into another directory
+        FileUtils.moveDirectoryToDirectory(newDir1, dir2, true);
+        File newDir1moved = new File(
+                dir2.getAbsolutePath() + separator + newDir1.getName());
+        assertTrue("directory was not created", newDir1moved.isDirectory());
+        assertFalse("directory mustn't exist", newDir1.exists());
+        text = Files
+                .lines(Paths.get(newDir1moved.getAbsolutePath(), file1.getName()))
+                .collect(Collectors.joining());
+        assertEquals("file content doesn't match what was written", content1 +
+                content2, text);
     }
 }

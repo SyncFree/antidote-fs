@@ -37,11 +37,12 @@ public class FsModel implements Runnable {
     // period for refreshing the path map
     static final public int                REFRESH_PERIOD = 5;
 
-    static final private String            DIR_PREFIX     = "DIR_";
-    static final private String            FILE_PREFIX    = "FILE_";
+    // prefixes of inode maps' keys
+    static final private String            DIR_PREFIX     = "D_";
+    static final private String            FILE_PREFIX    = "F_";
 
     // keys in each inode map
-    static final private String            CONTENT        = "CONTENT";
+    static final private String            CONTENT        = "CONT";
     static final private String            SIZE           = "SIZE";
     static final private String            MODE           = "MODE";
 
@@ -92,7 +93,6 @@ public class FsModel implements Runnable {
                 map_aw(inodeKey).update(
                         register(CONTENT).assign(new String(contents.array())),
                         integer(SIZE).assign(contents.array().length)));
-
         return (int) bufSize;
     }
 
@@ -125,11 +125,9 @@ public class FsModel implements Runnable {
             bucket.update(tx, map_aw(fileKey)
                     .update(integer(MODE).assign(FileStat.S_IFREG | 0740),
                             integer(SIZE).assign(0L)));
-
             tx.commitTransaction();
         }
         refreshPathsMap();
-
     }
 
     public void makeDir(String path) {
@@ -175,7 +173,6 @@ public class FsModel implements Runnable {
 
                 tx.commitTransaction();
             }
-
         } else { // move a file
             try (InteractiveTransaction tx = antidote.startTransaction()) {
                 bucket.update(tx, pathsKey.update(register(newPath).assign(inodeKey)));
