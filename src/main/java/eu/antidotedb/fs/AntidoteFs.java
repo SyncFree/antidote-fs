@@ -36,8 +36,10 @@ public class AntidoteFs extends FuseStubFS {
         @Parameter(names = { "--antidote", "-a" })
         private String antidoteAddress;
     }
+    
+    // TODO setup logging
 
-    private FsModel fs;
+    private final FsModel fs;
 
     public AntidoteFs(String antidoteAddress) {
         fs = new FsModel(antidoteAddress);

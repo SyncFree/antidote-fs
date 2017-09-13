@@ -119,20 +119,30 @@ public class FsModel implements Runnable {
     }
 
     public void makeFile(String path) {
-        // TODO bind all this into a tx
-        String inodeKey = createFilePath(path);
-        bucket.update(antidote.noTransaction(), map_aw(inodeKey)
-                .update(integer(MODE).assign(FileStat.S_IFREG | 0740),
-                        integer(SIZE).assign(0L)));
+        String fileKey = FILE_PREFIX + UUID.randomUUID().toString();
+        try (InteractiveTransaction tx = antidote.startTransaction()) {
+            bucket.update(tx, pathsKey.update(register(path).assign(fileKey)));
+            bucket.update(tx, map_aw(fileKey)
+                    .update(integer(MODE).assign(FileStat.S_IFREG | 0740),
+                            integer(SIZE).assign(0L)));
+
+            tx.commitTransaction();
+        }
+        refreshPathsMap();
+
     }
 
     public void makeDir(String path) {
-        // TODO bind all this into a tx
         // XXX size of a dir?
-        String inodeKey = createDirPath(path);
-        bucket.update(antidote.noTransaction(), map_aw(inodeKey)
-                .update(integer(MODE).assign(FileStat.S_IFDIR | 0740),
-                        integer(SIZE).assign(0L)));
+        String dirKey = DIR_PREFIX + UUID.randomUUID().toString();
+        try (InteractiveTransaction tx = antidote.startTransaction()) {
+            bucket.update(tx, pathsKey.update(register(path).assign(dirKey)));
+            bucket.update(tx, map_aw(dirKey)
+                    .update(integer(MODE).assign(FileStat.S_IFDIR | 0740),
+                            integer(SIZE).assign(0L)));
+            tx.commitTransaction();
+        }
+        refreshPathsMap();
     }
 
     public void rename(String oldPath, String newPath) {
@@ -180,7 +190,7 @@ public class FsModel implements Runnable {
         // TODO handle other attributes
         String inodeKey = getInodeKey(path);
         MapReadResult res = bucket.read(antidote.noTransaction(), map_aw(inodeKey));
-        // XXX remove casting once IntegerKey typing is published 
+        // XXX remove casting once IntegerKey typing is published
         long mode = (long) res.get(integer(MODE));
         long size = (long) res.get(integer(SIZE));
         stat.st_size.set(size);
@@ -194,8 +204,6 @@ public class FsModel implements Runnable {
         // TODO
     }
 
-    // --------------- Methods to manage the map of paths
-
     public String getInodeKey(String path) {
         return pathsMap.get(register(path));
     }
@@ -204,20 +212,6 @@ public class FsModel implements Runnable {
         // TODO gc inode key
         bucket.update(antidote.noTransaction(), pathsKey.removeKey(register(path)));
         refreshPathsMap();
-    }
-
-    private String createFilePath(String path) {
-        String fileKey = FILE_PREFIX + UUID.randomUUID().toString();
-        bucket.update(antidote.noTransaction(), pathsKey.update(register(path).assign(fileKey)));
-        refreshPathsMap();
-        return fileKey;
-    }
-
-    private String createDirPath(String path) {
-        String dirKey = DIR_PREFIX + UUID.randomUUID().toString();
-        bucket.update(antidote.noTransaction(), pathsKey.update(register(path).assign(dirKey)));
-        refreshPathsMap();
-        return dirKey;
     }
 
     @Override
