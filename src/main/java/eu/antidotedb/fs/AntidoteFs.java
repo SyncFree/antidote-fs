@@ -26,23 +26,31 @@ import ru.serce.jnrfuse.struct.FuseFileInfo;
  * be created)</li>
  * <li>-a / --antidote: the address of the Antidote database, formatted as
  * &lt;IPAddress:Port&gt;</li>
+ * <li>-r / --refresh: path refresh period (ms)</li>
  * </ul>
  */
 public class AntidoteFs extends FuseStubFS {
 
     private static class Args {
-        @Parameter(names = { "--dir", "-d" })
+        @Parameter(names = { "--dir", "-d" }, description = "Path of the mountpoint.")
         private String fsDir;
-        @Parameter(names = { "--antidote", "-a" })
+        @Parameter(names = { "--antidote",
+                "-a" }, description = "IP address of Antidote (<IP>:<port>).")
         private String antidoteAddress;
+        @Parameter(names = { "--refresh", "-r" }, description = "Path refresh period (ms).")
+        private int    refreshPeriod;
     }
-    
+
     // TODO setup logging
 
     private final FsModel fs;
 
     public AntidoteFs(String antidoteAddress) {
-        fs = new FsModel(antidoteAddress);
+        this(antidoteAddress, 0);
+    }
+
+    public AntidoteFs(String antidoteAddress, int refreshPeriod) {
+        fs = new FsModel(antidoteAddress, refreshPeriod);
     }
 
     @Override
@@ -177,7 +185,7 @@ public class AntidoteFs extends FuseStubFS {
         try {
             if (Files.notExists(rootPath))
                 Files.createDirectory(rootPath);
-            stub = new AntidoteFs(ar.antidoteAddress);
+            stub = new AntidoteFs(ar.antidoteAddress, ar.refreshPeriod);
             stub.mount(rootPath, true, true);
         } catch (IOException e) {
             e.printStackTrace();

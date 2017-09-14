@@ -26,29 +26,30 @@ public class FsModel implements Runnable {
 
     private final AntidoteClient           antidote;
     private final Bucket                   bucket;
+    private final int                      refreshPeriod;
 
     private final MapKey                   pathsKey;
     private MapReadResult                  pathsMap;
     private final ScheduledExecutorService pathsRefreshScheduler;
 
-    static final private String            BUCKET_LABEL   = "antidote-fs";
-    static final private String            PATHS_MAP      = "PATHS";
+    static final private String            BUCKET_LABEL           = "antidote-fs";
+    static final private String            PATHS_MAP              = "PATHS";
 
-    // period for refreshing the path map
-    static final public int                REFRESH_PERIOD = 5;
+    // default period for refreshing the path map
+    static final private int               DEFAULT_REFRESH_PERIOD = 5000;
 
     // prefixes of inode maps' keys
-    static final private String            DIR_PREFIX     = "D_";
-    static final private String            FILE_PREFIX    = "F_";
+    static final private String            DIR_PREFIX             = "D_";
+    static final private String            FILE_PREFIX            = "F_";
 
     // keys in each inode map
-    static final private String            CONTENT        = "CONT";
-    static final private String            SIZE           = "SIZE";
-    static final private String            MODE           = "MODE";
+    static final private String            CONTENT                = "CONT";
+    static final private String            SIZE                   = "SIZE";
+    static final private String            MODE                   = "MODE";
 
-    static final private String            SEP_REGEXP     = "[" + separator + "]*";
+    static final private String            SEP_REGEXP             = "[" + separator + "]*";
 
-    public FsModel(String antidoteAddr) {
+    public FsModel(String antidoteAddr, int rfsPeriod) {
         String[] addrParts = antidoteAddr.split(":");
         antidote = new AntidoteClient(
                 new InetSocketAddress(addrParts[0], Integer.parseInt(addrParts[1])));
@@ -58,9 +59,11 @@ public class FsModel implements Runnable {
         refreshPathsMap();
         if (getInodeKey(separator) == null) // create the root dir if not existing
             makeDir(separator);
+
+        refreshPeriod = rfsPeriod > 0 ? rfsPeriod : DEFAULT_REFRESH_PERIOD;
         pathsRefreshScheduler = Executors.newScheduledThreadPool(1);
         pathsRefreshScheduler.scheduleAtFixedRate(this,
-                REFRESH_PERIOD, REFRESH_PERIOD, TimeUnit.SECONDS);
+                refreshPeriod, refreshPeriod, TimeUnit.MILLISECONDS);
     }
 
     public void listDir(String path, Pointer buf, FuseFillDir filter) {
