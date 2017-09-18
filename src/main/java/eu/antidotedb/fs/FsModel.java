@@ -6,48 +6,53 @@ import static java.io.File.separator;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
+import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+
+import com.google.protobuf.ByteString;
 
 import eu.antidotedb.client.AntidoteClient;
 import eu.antidotedb.client.Bucket;
 import eu.antidotedb.client.InteractiveTransaction;
 import eu.antidotedb.client.Key;
 import eu.antidotedb.client.MapKey;
+import eu.antidotedb.client.ValueCoder;
 import eu.antidotedb.client.MapKey.MapReadResult;
 import jnr.ffi.Pointer;
 import ru.serce.jnrfuse.FuseFillDir;
 import ru.serce.jnrfuse.struct.FileStat;
 
-// TODO use byte registers instead of string for content
 public class FsModel implements Runnable {
 
-    private final AntidoteClient           antidote;
-    private final Bucket                   bucket;
-    private final int                      refreshPeriod;
+    private final AntidoteClient                antidote;
+    private final Bucket                        bucket;
+    private final int                           refreshPeriod;
 
-    private final MapKey                   pathsKey;
-    private MapReadResult                  pathsMap;
-    private final ScheduledExecutorService pathsRefreshScheduler;
+    private final MapKey                        pathsKey;
+    private MapReadResult                       pathsMap;
+    private final ScheduledExecutorService      pathsRefreshScheduler;
 
-    static final private String            BUCKET_LABEL           = "antidote-fs";
-    static final private String            PATHS_MAP              = "PATHS";
+    static final private String                 BUCKET_LABEL           = "antidote-fs";
+    static final private String                 PATHS_MAP              = "PATHS";
 
     // default period for refreshing the path map
-    static final private int               DEFAULT_REFRESH_PERIOD = 5000;
+    static final private int                    DEFAULT_REFRESH_PERIOD = 5000;
 
     // prefixes of inode maps' keys
-    static final private String            DIR_PREFIX             = "D_";
-    static final private String            FILE_PREFIX            = "F_";
+    static final private String                 DIR_PREFIX             = "D_";
+    static final private String                 FILE_PREFIX            = "F_";
 
     // keys in each inode map
-    static final private String            CONTENT                = "CONT";
-    static final private String            SIZE                   = "SIZE";
-    static final private String            MODE                   = "MODE";
+    static final private String                 CONTENT                = "CONT";
+    static final private String                 SIZE                   = "SIZE";
+    static final private String                 MODE                   = "MODE";
 
-    static final private String            SEP_REGEXP             = "[" + separator + "]*";
+    static final private String                 SEP_REGEXP             = "[" + separator + "]*";
+
+    static final private ValueCoder<ByteString> vc                     = ValueCoder.bytestringEncoder;
 
     public FsModel(String antidoteAddr, int rfsPeriod) {
         String[] addrParts = antidoteAddr.split(":");
@@ -76,9 +81,10 @@ public class FsModel implements Runnable {
 
     public int writeFile(String path, Pointer buffer, long bufSize, long writeOffset) {
         String inodeKey = getInodeKey(path);
-        String res = bucket.read(antidote.noTransaction(), map_aw(inodeKey)).get(register(CONTENT));
+        ByteString res = bucket.read(antidote.noTransaction(), map_aw(inodeKey))
+                .get(register(CONTENT, vc));
 
-        byte[] contentBytes = res == null ? new byte[0] : res.getBytes();
+        byte[] contentBytes = res == null ? new byte[0] : res.toByteArray();
         ByteBuffer contents = ByteBuffer.wrap(contentBytes);
         int maxWriteIndex = (int) (writeOffset + bufSize);
         byte[] bytesToWrite = new byte[(int) bufSize];
@@ -91,21 +97,24 @@ public class FsModel implements Runnable {
         buffer.get(0, bytesToWrite, 0, (int) bufSize);
         contents.position((int) writeOffset);
         contents.put(bytesToWrite);
+        contents.position(0);
 
+        ByteString bs = ByteString.copyFrom(contents);
         bucket.update(antidote.noTransaction(),
                 map_aw(inodeKey).update(
-                        register(CONTENT).assign(new String(contents.array())),
-                        integer(SIZE).assign(contents.array().length)));
+                        register(CONTENT, vc).assign(bs),
+                        integer(SIZE).assign(bs.size())));
         return (int) bufSize;
     }
 
     public int readFile(String path, Pointer buffer, long size, long offset) {
         String inodeKey = getInodeKey(path);
-        String res = bucket.read(antidote.noTransaction(), map_aw(inodeKey)).get(register(CONTENT));
+        ByteString res = bucket.read(antidote.noTransaction(), map_aw(inodeKey))
+                .get(register(CONTENT, vc));
 
-        byte[] contentBytes = res == null ? new byte[0] : res.getBytes();
+        byte[] contentBytes = res == null ? new byte[0] : res.toByteArray();
         ByteBuffer contents = ByteBuffer.wrap(contentBytes);
-        int bytesToRead = (int) Math.min(res.getBytes().length - offset, size);
+        int bytesToRead = (int) Math.min(contentBytes.length - offset, size);
         byte[] bytesRead = new byte[bytesToRead];
         contents.position((int) offset);
         contents.get(bytesRead, 0, bytesToRead);
@@ -163,10 +172,10 @@ public class FsModel implements Runnable {
                 // create new path
                 bucket.update(tx, pathsKey.update(register(newPath).assign(inodeKey)));
                 // copy descendants to the new path
-                for (String k : descToCopy.keySet())
+                for (Entry<String, String> entry : descToCopy.entrySet())
                     bucket.update(tx,
-                            pathsKey.update(register(newPath + separator + k)
-                                    .assign(descToCopy.get(k))));
+                            pathsKey.update(register(newPath + separator + entry.getKey())
+                                    .assign(entry.getValue())));
 
                 // delete old key
                 bucket.update(tx, pathsKey.removeKey(register(oldPath)));

@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit;
 
 public abstract class AntidoteFsAbstractTest {
 
-    protected static Random random = new Random();
+    protected static final Random random = new Random();
 
     protected static void blockingMount(AntidoteFs afs, Path rootDir) throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(1);

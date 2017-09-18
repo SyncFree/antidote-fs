@@ -25,20 +25,20 @@ import com.palantir.docker.compose.connection.State;
  */
 public class DistributedTest extends AntidoteFsAbstractTest {
 
-    private static String TEST_ROOT_DIR = "antidote-fs";
+    private static String                 TEST_ROOT_DIR    = "antidote-fs";
 
-    private static AntidoteFs afs1;
-    private static AntidoteFs afs2;
-    private static AntidoteFs afs3;
-    private static Path rootDir1;
-    private static Path rootDir2;
-    private static Path rootDir3;
-    
-    private static int refreshPeriod = 200;
-    private static int propagationDelay = 500;
+    private static AntidoteFs             afs1;
+    private static AntidoteFs             afs2;
+    private static AntidoteFs             afs3;
+    private static Path                   rootDir1;
+    private static Path                   rootDir2;
+    private static Path                   rootDir3;
+
+    private static int                    refreshPeriod    = 200;
+    private static int                    propagationDelay = 500;
 
     @ClassRule
-    public static DockerComposeRule docker = DockerComposeRule.builder()
+    public static final DockerComposeRule docker           = DockerComposeRule.builder()
             .file("src/test/resources/docker-antidote-3dcs.yml").build();
 
     @BeforeClass
@@ -93,7 +93,8 @@ public class DistributedTest extends AntidoteFsAbstractTest {
 
         // read the file on the other mount point
         File fileOne2 = new File(rootDir2.toAbsolutePath() + File.separator + fileName);
-        int i = 5, wait = refreshPeriod + propagationDelay; // XXX wait (i*wait) for propagation among fs local replicas
+        int i = 5, wait = refreshPeriod + propagationDelay; // XXX wait (i*wait) for propagation
+                                                            // among fs local replicas
         while (!fileOne2.exists() && i > 0) {
             Thread.sleep(wait);
             i--;

@@ -32,7 +32,7 @@ import eu.antidotedb.client.MapKey.MapReadResult;
 public class AntidoteTest {
 
     @ClassRule
-    public static DockerComposeRule docker = DockerComposeRule.builder()
+    public static final DockerComposeRule docker = DockerComposeRule.builder()
             .file("src/test/resources/docker-antidote-single_host.yml")
             .waitingForService("antidote", HealthChecks.toHaveAllPortsOpen()).build();
 

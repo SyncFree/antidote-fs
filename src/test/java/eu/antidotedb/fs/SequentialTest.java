@@ -32,13 +32,13 @@ import com.palantir.docker.compose.connection.waiting.HealthChecks;
  */
 public class SequentialTest extends AntidoteFsAbstractTest {
 
-    private static String           TEST_ROOT_DIR = "antidote-fs";
+    private static String                 TEST_ROOT_DIR = "antidote-fs";
 
-    private static AntidoteFs       afs;
-    private static Path             rootDir;
+    private static AntidoteFs             afs;
+    private static Path                   rootDir;
 
     @ClassRule
-    public static DockerComposeRule docker        = DockerComposeRule.builder()
+    public static final DockerComposeRule docker        = DockerComposeRule.builder()
             .file("src/test/resources/docker-antidote-single_host.yml")
             .waitingForService("antidote", HealthChecks.toHaveAllPortsOpen()).build();
 
