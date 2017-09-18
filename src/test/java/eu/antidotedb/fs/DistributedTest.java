@@ -95,13 +95,16 @@ public class DistributedTest extends AntidoteFsAbstractTest {
         File fileOne2 = new File(rootDir2.toAbsolutePath() + File.separator + fileName);
         int i = 5, wait = refreshPeriod + propagationDelay; // XXX wait (i*wait) for propagation
                                                             // among fs local replicas
-        while (!fileOne2.exists() && i > 0) {
+        while (!fileOne2.exists() && i-- > 0)
             Thread.sleep(wait);
-            i--;
-        }
         assertTrue("file is not present on rootDir2", fileOne2.exists());
 
-        String txtRead2 = Files.lines(fileOne2.toPath()).collect(Collectors.joining());
+        i = 5;
+        String txtRead2 = null;
+        do {
+            Thread.sleep(propagationDelay);
+            txtRead2 = Files.lines(fileOne2.toPath()).collect(Collectors.joining());
+        } while (!txtRead1.equals(txtRead2) && --i > 0);
         assertEquals("file content doesn't match what was written", txtRead1, txtRead2);
     }
 }

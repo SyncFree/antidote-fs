@@ -5,6 +5,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 
@@ -41,9 +44,8 @@ public class AntidoteFs extends FuseStubFS {
         private int    refreshPeriod;
     }
 
-    // TODO setup logging
-
-    private final FsModel fs;
+    private final FsModel       fs;
+    private static final Logger log = LogManager.getLogger();
 
     public AntidoteFs(String antidoteAddress) {
         this(antidoteAddress, 0);
@@ -55,7 +57,7 @@ public class AntidoteFs extends FuseStubFS {
 
     @Override
     public int create(String path, @mode_t long mode, FuseFileInfo fi) {
-        // System.out.println("**** CREATE " + path);
+        log.debug("CREATE {}", () -> path);
         if (fs.getInodeKey(path) != null)
             return -ErrorCodes.EEXIST();
 
@@ -68,7 +70,7 @@ public class AntidoteFs extends FuseStubFS {
 
     @Override
     public int getattr(String path, FileStat stat) {
-        // System.out.println("**** GETATTR " + path);
+        log.debug("GETATTR {}", () -> path);
         if (fs.getInodeKey(path) != null) {
             fs.getAttr(path, stat);
             return 0;
@@ -78,7 +80,7 @@ public class AntidoteFs extends FuseStubFS {
 
     @Override
     public int mkdir(String path, @mode_t long mode) {
-        // System.out.println("**** MAKEDIR " + path);
+        log.debug("MAKEDIR {}", () -> path);
         if (fs.getInodeKey(path) != null)
             return -ErrorCodes.EEXIST();
 
@@ -92,7 +94,7 @@ public class AntidoteFs extends FuseStubFS {
     @Override
     public int read(String path, Pointer buf, @size_t long size, @off_t long offset,
             FuseFileInfo fi) {
-        // System.out.println("**** READ " + path);
+        log.debug("READ {}", () -> path);
         if (fs.getInodeKey(path) == null)
             return -ErrorCodes.ENOENT();
         if (fs.isDirectory(path))
@@ -104,7 +106,7 @@ public class AntidoteFs extends FuseStubFS {
     @Override
     public int readdir(String path, Pointer buf, FuseFillDir filter, @off_t long offset,
             FuseFileInfo fi) {
-        // System.out.println("**** READDIR " + path);
+        log.debug("READDIR {}", () -> path);
         if (fs.getInodeKey(path) == null)
             return -ErrorCodes.ENOENT();
         if (!fs.isDirectory(path))
@@ -118,7 +120,7 @@ public class AntidoteFs extends FuseStubFS {
 
     @Override
     public int rename(String oldPath, String newPath) {
-        // System.out.println("**** RENAME " + oldPath + " " + newPath);
+        log.debug("RENAME {} to {}", () -> oldPath, () -> newPath);
         if (fs.getInodeKey(oldPath) == null)
             return -ErrorCodes.ENOENT();
 
@@ -133,7 +135,7 @@ public class AntidoteFs extends FuseStubFS {
 
     @Override
     public int rmdir(String path) {
-        // System.out.println("**** RMDIR " + path);
+        log.debug("RMDIR {}", () -> path);
         if (fs.getInodeKey(path) == null)
             return -ErrorCodes.ENOENT();
         if (!fs.isDirectory(path))
@@ -145,7 +147,7 @@ public class AntidoteFs extends FuseStubFS {
 
     @Override
     public int truncate(String path, long offset) {
-        // System.out.println("**** TRUNCATE " + path);
+        log.debug("TRUNCATE {}", () -> path);
         if (fs.getInodeKey(path) == null)
             return -ErrorCodes.ENOENT();
         if (fs.isDirectory(path))
@@ -157,7 +159,7 @@ public class AntidoteFs extends FuseStubFS {
 
     @Override
     public int unlink(String path) {
-        // System.out.println("**** UNLINK " + path);
+        log.debug("UNLINK {}", () -> path);
         if (fs.getInodeKey(path) == null)
             return -ErrorCodes.ENOENT();
 
@@ -168,7 +170,7 @@ public class AntidoteFs extends FuseStubFS {
     @Override
     public int write(String path, Pointer buf, @size_t long size, @off_t long offset,
             FuseFileInfo fi) {
-        // System.out.println("**** WRITE " + path);
+        log.debug("WRITE {}", () -> path);
         if (fs.getInodeKey(path) == null)
             return -ErrorCodes.ENOENT();
         if (fs.isDirectory(path))
