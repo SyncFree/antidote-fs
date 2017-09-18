@@ -56,7 +56,7 @@ public class SequentialTest extends AntidoteFsAbstractTest {
     }
 
     @Test
-    public void basicFileCrudTest() throws Exception {
+    public void basicFileCrud() throws Exception {
         String content1 = getRandomString();
         String content2 = getRandomString();
 
@@ -76,7 +76,7 @@ public class SequentialTest extends AntidoteFsAbstractTest {
     }
 
     @Test
-    public void emptyFileTest() throws Exception {
+    public void createEmptyFile() throws Exception {
         File file = new File(rootDir.toAbsolutePath() + separator + getRandomString());
         assertFalse("file mustn't exist", file.exists());
         assertTrue("file hasn't been created", file.createNewFile());
@@ -86,7 +86,7 @@ public class SequentialTest extends AntidoteFsAbstractTest {
     }
 
     @Test
-    public void emptyDirectoryTest() throws Exception {
+    public void createEmptyDirectory() throws Exception {
         Path dirPath = Files
                 .createDirectory(Paths.get(rootDir.toAbsolutePath().toString(), getRandomString()));
         File dir = new File(dirPath.toString());
@@ -96,7 +96,7 @@ public class SequentialTest extends AntidoteFsAbstractTest {
     }
 
     @Test
-    public void basicDirCrudTest() throws Exception {
+    public void basicDirCrud() throws Exception {
         Path dirPath = Files
                 .createDirectory(Paths.get(rootDir.toAbsolutePath().toString(), getRandomString()));
         File dir = new File(dirPath.toString());
@@ -127,7 +127,7 @@ public class SequentialTest extends AntidoteFsAbstractTest {
     }
 
     @Test
-    public void moveFileTest() throws Exception {
+    public void moveFile() throws Exception {
         String content1 = getRandomString();
         String content2 = getRandomString();
 
@@ -174,7 +174,7 @@ public class SequentialTest extends AntidoteFsAbstractTest {
     }
 
     @Test
-    public void moveEmptyDirTest() throws Exception {
+    public void moveEmptyDir() throws Exception {
         Path dir1Path = Files
                 .createDirectory(Paths.get(rootDir.toAbsolutePath().toString(), getRandomString()));
         File dir1 = new File(dir1Path.toString());

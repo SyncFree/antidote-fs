@@ -75,7 +75,7 @@ public class DistributedTest extends AntidoteFsAbstractTest {
     }
 
     @Test
-    public void basicFileCrudTest() throws Exception {
+    public void basicFileCrud() throws Exception {
         String fileName = getRandomString();
         String content1 = getRandomString();
         String content2 = getRandomString();
