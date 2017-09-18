@@ -1,5 +1,6 @@
 apply plugin: 'java'
 apply plugin: 'application'
+apply plugin: 'findbugs'
 
 mainClassName = 'eu.antidotedb.fs.AntidoteFs'
 
@@ -40,4 +41,15 @@ jar {
   from {
     configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
   }
+}
+
+tasks.withType(FindBugs) {
+    reports {
+        xml.enabled false
+        html.enabled true
+    }
+}
+
+findbugs {
+    sourceSets = [sourceSets.main]
 }
