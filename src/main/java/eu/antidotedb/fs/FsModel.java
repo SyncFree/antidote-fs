@@ -79,8 +79,7 @@ public class FsModel implements Runnable {
         }
     }
 
-    public int writeFile(String path, Pointer buffer, long bufSize, long writeOffset) {
-        String inodeKey = getInodeKey(path);
+    public int writeFile(String inodeKey, Pointer buffer, long bufSize, long writeOffset) {
         ByteString res = bucket.read(antidote.noTransaction(), map_aw(inodeKey))
                 .get(register(CONTENT, vc));
 
@@ -107,11 +106,9 @@ public class FsModel implements Runnable {
         return (int) bufSize;
     }
 
-    public int readFile(String path, Pointer buffer, long size, long offset) {
-        String inodeKey = getInodeKey(path);
+    public int readFile(String inodeKey, Pointer buffer, long size, long offset) {
         ByteString res = bucket.read(antidote.noTransaction(), map_aw(inodeKey))
                 .get(register(CONTENT, vc));
-
         byte[] contentBytes = res == null ? new byte[0] : res.toByteArray();
         ByteBuffer contents = ByteBuffer.wrap(contentBytes);
         int bytesToRead = (int) Math.min(contentBytes.length - offset, size);
@@ -122,8 +119,7 @@ public class FsModel implements Runnable {
         return bytesToRead;
     }
 
-    public boolean isDirectory(String path) {
-        String inodeKey = getInodeKey(path);
+    public boolean isDirectory(String inodeKey) {
         if (inodeKey.startsWith(DIR_PREFIX))
             return true;
         else
@@ -155,9 +151,8 @@ public class FsModel implements Runnable {
         refreshPathsMap();
     }
 
-    public void rename(String oldPath, String newPath) {
-        String inodeKey = getInodeKey(oldPath);
-        if (inodeKey.startsWith(DIR_PREFIX)) { // move a dir
+    public void rename(String inodeKey, String oldPath, String newPath) {
+        if (isDirectory(inodeKey)) { // move a dir
 
             // get all dir descendants
             HashMap<String, String> descToCopy = new HashMap<>();
@@ -195,9 +190,8 @@ public class FsModel implements Runnable {
         refreshPathsMap();
     }
 
-    public void getAttr(String path, FileStat stat) {
+    public void getAttr(String inodeKey, FileStat stat) {
         // TODO handle other attributes
-        String inodeKey = getInodeKey(path);
         MapReadResult res = bucket.read(antidote.noTransaction(), map_aw(inodeKey));
         // XXX remove casting once IntegerKey typing is published
         long mode = (long) res.get(integer(MODE));
@@ -209,7 +203,7 @@ public class FsModel implements Runnable {
             stat.st_mode.set(FileStat.S_IFREG | mode);
     }
 
-    public void truncate(String path, long offset) {
+    public void truncate(String inodeKey, long offset) {
         // TODO
     }
 
