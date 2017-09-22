@@ -139,7 +139,8 @@ public class FsModel implements Runnable {
     }
 
     public void makeDir(String path) {
-        // XXX size of a dir?
+        // XXX size of a dir: space on the disk that is used to store its metadata
+        // (i.e. the table of files that belong to this directory)
         String dirKey = DIR_PREFIX + UUID.randomUUID().toString();
         try (InteractiveTransaction tx = antidote.startTransaction()) {
             bucket.update(tx, pathsKey.update(register(path).assign(dirKey)));
@@ -151,6 +152,14 @@ public class FsModel implements Runnable {
         refreshPathsMap();
     }
 
+    /**
+     * Note: POSIX standard requires rename to be atomic:
+     * http://pubs.opengroup.org/onlinepubs/9699919799/functions/rename.html
+     * 
+     * @param inodeKey
+     * @param oldPath
+     * @param newPath
+     */
     public void rename(String inodeKey, String oldPath, String newPath) {
         if (isDirectory(inodeKey)) { // move a dir
 
@@ -192,6 +201,7 @@ public class FsModel implements Runnable {
 
     public void getAttr(String inodeKey, FileStat stat) {
         // TODO handle other attributes
+        // https://en.wikipedia.org/wiki/Inode#POSIX_inode_description
         MapReadResult res = bucket.read(antidote.noTransaction(), map_aw(inodeKey));
         // XXX remove casting once IntegerKey typing is published
         long mode = (long) res.get(integer(MODE));
