@@ -1,0 +1,39 @@
+{
+    "name": "antidote-fs",
+    "version": "0.1.0",
+    "description": "antidote-fs",
+    "main": "antidote-fs.js",
+    "scripts": {
+        "start": "node src/main.js",
+        "lint": "eslint --config .eslintrc.json --format compact ./src/",
+        "test": "echo TODO"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/SyncFree/antidote-fs.git"
+    },
+    "keywords": [
+        "node.js",
+        "filesystem",
+        "antidote"
+    ],
+    "author": "",
+    "license": "Apache-2.0",
+    "readmeFilename": "README.md",
+    "dependencies": {
+        "antidote_ts_client": "^0.1.7",
+        "fusejs": "^1.4.3"
+    },
+    "devDependencies": {
+        "chai": "^4.1.2",
+        "eslint": "^4.9.0",
+        "eslint-config-google": "^0.9.1",
+        "eslint-config-standard": "^10.2.1",
+        "eslint-plugin-import": "^2.8.0",
+        "eslint-plugin-node": "^5.2.0",
+        "eslint-plugin-promise": "^3.6.0",
+        "eslint-plugin-standard": "^3.0.1",
+        "mocha": "^4.0.1",
+        "sinon": "^4.0.1"
+    }
+}

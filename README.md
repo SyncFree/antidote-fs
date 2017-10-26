@@ -1,32 +1,20 @@
 # Antidote file system
 
-[![Build Status](https://travis-ci.org/SyncFree/antidote-fs.svg?branch=master)](https://travis-ci.org/SyncFree/antidote-fs)  
+A [FUSE][fuse-wiki] file system backed by [Antidote][antidote].   
 
-A [FUSE][fuse-wiki] file system backed by [Antidote][antidote].  
-**WARNING: work in progress, alpha quality.**
+In the [_fuse-hl](_fuse-hl/) folder is an early implementation using 
+the [FUSE synchronous high-level API][fuse-hl].  
+Instead, this implementation uses the [FUSE asynchronous low-level API][fuse-ll]
+by means of its node.js bindings.
 
 
 ## Getting started
 
-Requirements: [JDK 8][jdk8], [Antidote][antidote-setup], [Fuse 2.9][fuse] (and [Docker][docker] for the tests).  
-To compile: `make` or `./gradlew build`.  
-
-Assuming an Antidote instance is reachable at `127.0.0.1:8087`,
-to mount the file system under `/tmp/mnt` on Linux just issue:
-
-    ./gradlew run -Dexec.args="-d /tmp/mnt -a 127.0.0.1:8087"
-
-Some convenient make targets are available:
-
-    # spawn an Antidote Docker container and mount Antidote-fs on ./d1
-    make run
-
-    # start and stop a local Antidote container
-    make start-antidote-docker
-    make stop-antidote-docker
-
-    # ./gradlew run -Dexec.args="-d /d1 -a 127.0.0.1:8087"
-    make mount-fs
+Requirements: [node.js 8][nodejs], [npm][npm], [Antidote][antidote-setup], 
+[Fuse 2.9][fuse].  
+To compile it: `npm install`.  
+To run it: `node src/antidote-fs.js <mountpoint>`.  
+(It currently assumes that an Antidote instance is reachable at `localhost:8087`).
 
 
 ## Credits
@@ -34,9 +22,11 @@ Some convenient make targets are available:
 [RainbowFS][rainbowfs] research project.
 
  [antidote]: http://syncfree.github.io/antidote/
- [antidote-setup]: http://syncfree.github.io/antidote/setup.html
- [docker]: https://www.docker.com/get-docker
- [fuse]: https://github.com/libfuse/libfuse
  [fuse-wiki]: https://en.wikipedia.org/wiki/Filesystem_in_Userspace
- [jdk8]: http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html 
  [rainbowfs]: http://rainbowfs.lip6.fr/
+ [nodejs]: https://nodejs.org/
+ [npm]: https://www.npmjs.com/
+ [antidote-setup]: http://syncfree.github.io/antidote/setup.html
+ [fuse]: https://github.com/libfuse/libfuse
+ [fuse-hl]: http://libfuse.github.io/doxygen/structfuse__operations.html
+ [fuse-ll]: http://libfuse.github.io/doxygen/structfuse__lowlevel__ops.html
