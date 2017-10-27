@@ -9,6 +9,7 @@ const FileSystem = require('fusejs').FileSystem;
 
 const AttrFile = require('./model').AttrFile;
 const AttrDir = require('./model').AttrDir;
+const getUnixTime = require('./model').getUnixTime;
 
 const nodejsAssert = require('assert');
 
@@ -62,7 +63,7 @@ function mdUpdate(attr) {
     updates.push(map.integer('nlink').set(attr.nlink));
     updates.push(map.register('uid').set(attr.uid));
     updates.push(map.register('gid').set(attr.gid));
-    updates.push(map.register('isFile').set(attr.isFile ? 'true' : 'false')); // TODO: check
+    updates.push(map.register('isFile').set(attr.isFile));
     for (let name in attr.children) {
         if (attr.children.hasOwnProperty(name)) {
             updates.push(map.map('children').register(name).set(attr.children[name]));
@@ -118,11 +119,6 @@ async function readMd(inode) {
         // Because empty maps are not returned by Antidote
         if (!md.children) md.children = {};
         if (!md.hlinks) md.hlinks = {};
-        if (md.isFile == 'true') {
-            md.isFile = true
-        } else {
-            md.isFile = false;
-        }
     }
     return md;
 }
@@ -268,10 +264,10 @@ class AntidoteFS extends FileSystem {
         for (let i = 0; i < keys.length; i++) {
             log('updating attribute', keys[i], 'to', attr[keys[i]]);
             if (keys[i] == 'atime' || keys[i] == 'mtime') {
-                if (attr[keys[i]] == -1) { //TODO:
-                    iattr[keys[i]] = Math.floor(new Date().getTime() / 1000);
+                if (attr[keys[i]] == -1) {
+                    iattr[keys[i]] = getUnixTime();
                 } else {
-                    iattr[keys[i]] = Math.floor(new Date(attr[keys[i]]).getTime() / 1000);
+                    iattr[keys[i]] = getUnixTime(attr[keys[i]]);
                 }
             } else {
                 iattr[keys[i]] = attr[keys[i]];
@@ -382,10 +378,12 @@ class AntidoteFS extends FileSystem {
                 reply.err(0);
                 return;
             } else {
+                // Target inode does not exist
                 reply.err(PosixError.ENOENT);
                 return;
             }
         } else {
+            // Parent inode does not exist
             reply.err(PosixError.ENOENT);
             return;
         }
@@ -604,7 +602,7 @@ class AntidoteFS extends FileSystem {
                 await antidote.update(
                     Array.prototype.concat(
                         mdDeleteChild(pattr, name),
-                        //mdDeleteHlink(attr, pino),
+                        mdDeleteHlink(attr, pino),
                         mdUpdate(attr),
                         mdUpdate(pattr)
                     )

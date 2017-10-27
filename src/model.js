@@ -5,8 +5,12 @@ const defaultDirMode = 0o40777; // 16895
 
 const defaultDirSize = 4096;
 
-function getUnixTime() {
-    return Math.floor(new Date().getTime() / 1000);
+const getUnixTime = function() {
+    if (arguments[0]) {
+        return Math.floor(new Date(arguments[0]).getTime() / 1000);
+    } else {
+        return Math.floor(new Date().getTime() / 1000);
+    }    
 }
 
 class Attr {
@@ -54,4 +58,4 @@ class AttrDir extends Attr {
     }
 }
 
-module.exports = {AttrFile, AttrDir};
+module.exports = { AttrFile, AttrDir, getUnixTime };
