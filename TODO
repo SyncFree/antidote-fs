@@ -1,9 +1,2 @@
- - CRDTs maps for md
- - check . and ..
- - add more assert
- - fix symlink
- 
-
  - map shell operations to system calls to Antidote calls
  - map spec with implementation
-

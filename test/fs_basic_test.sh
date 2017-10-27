@@ -1,6 +1,8 @@
 #!/bin/bash
 # Simple script to test basic file system operations.
 
+set -e
+
 [ $# -eq 0 ] && mkdir -p d1 && ROOT=./d1 || ROOT=$1
 
 RED='\033[0;31m'

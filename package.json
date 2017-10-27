@@ -6,7 +6,7 @@
     "scripts": {
         "start": "node src/main.js",
         "lint": "eslint --config .eslintrc.json --format compact ./src/",
-        "test": "echo TODO"
+        "test": "./test/test.sh"
     },
     "repository": {
         "type": "git",

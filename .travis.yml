@@ -6,5 +6,5 @@ node_js:
 before_install:
   - docker run -d --rm -it -p "8087:8087" antidotedb/antidote
   - sudo apt-get -qq update
-  - sudo apt-get install -y libfuse-dev
+  - sudo apt-get install -y libfuse-dev fuse
 
