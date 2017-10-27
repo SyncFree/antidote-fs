@@ -28,6 +28,7 @@ class Attr {
 
         this.children = {};
         this.hlinks = {};
+        this.isFile = false;
     }
     addHardLinkRef(pino, name) {
         this.hlinks[pino] = name;

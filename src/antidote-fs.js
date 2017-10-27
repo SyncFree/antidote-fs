@@ -45,12 +45,100 @@ const S_IFLNK = 0xA000; // symbolic link
 // const S_IFCHR = 0x2000; // character device
 // const S_IFIFO = 0x1000; // FIFO
 
+function isEmptyObject(obj) {
+    return !Object.keys(obj).length;
+}
+
+function mdUpdate(attr) {
+    let updates = [];
+    const map = antidote.map(`inode_${attr.inode}`);
+    updates.push(map.register('inode').set(attr.inode));
+    updates.push(map.register('mode').set(attr.mode));
+    updates.push(map.register('ctime').set(attr.ctime));
+    updates.push(map.register('mtime').set(attr.mtime));
+    updates.push(map.register('atime').set(attr.atime));
+    updates.push(map.register('rdev').set(attr.rdev));
+    updates.push(map.register('size').set(attr.size));
+    updates.push(map.integer('nlink').set(attr.nlink));
+    updates.push(map.register('uid').set(attr.uid));
+    updates.push(map.register('gid').set(attr.gid));
+    updates.push(map.register('isFile').set(attr.isFile ? 'true' : 'false')); // TODO: check
+    for (let name in attr.children) {
+        if (attr.children.hasOwnProperty(name)) {
+            updates.push(map.map('children').register(name).set(attr.children[name]));
+        }
+    }
+    for (let name in attr.hlinks) {
+        if (attr.hlinks.hasOwnProperty(name)) {
+            updates.push(map.map('hlinks').register(name).set(attr.hlinks[name]));
+        }
+    }
+    return updates;
+}
+
+function mdDelete(attr) {
+    const map = antidote.map(`inode_${attr.inode}`);
+    return map.removeAll([
+        map.register('inode'),
+        map.register('mode'),
+        map.register('ctime'),
+        map.register('mtime'),
+        map.register('atime'),
+        map.register('rdev'),
+        map.register('size'),
+        map.integer('nlink'),
+        map.register('uid'),
+        map.register('gid'),
+        map.register('isFile'),
+        map.map('children'),
+        map.map('hlinks'),
+    ]);
+}
+
+function mdDeleteChild(attr, name) {
+    return antidote.map(`inode_${attr.inode}`).map('children').remove(
+        antidote.register(name));
+}
+
+function mdDeleteHlink(attr, ino) {
+    return Array.prototype.concat(
+        antidote.map(`inode_${attr.inode}`).map('hlinks').remove(
+            antidote.register(ino.toString())),
+        antidote.map(`inode_${attr.inode}`).integer('nlink').increment(-1)
+    );
+}
+
+function dataUpdate(attr, data) {
+    return antidote.register(`data_${attr.inode}`).set(new Buffer(data));
+}
+
+async function readMd(inode) {
+    let md = (await antidote.map(`inode_${inode}`).read()).toJsObject();
+    if (!isEmptyObject(md)) {
+        // Because empty maps are not returned by Antidote
+        if (!md.children) md.children = {};
+        if (!md.hlinks) md.hlinks = {};
+        if (md.isFile == 'true') {
+            md.isFile = true
+        } else {
+            md.isFile = false;
+        }
+    }
+    return md;
+}
+
+async function readData(inode) {
+    return await antidote.register(`data_${inode}`).read();
+}
+
+
 /**
  * Not implemented Fuse operations:
  * forget, multiforget, getlk, setlk, setxattr
  * getxattr, listxattr, removexattr, bmap, ioctl, poll.
  */
 class AntidoteFS extends FileSystem {
+
     /**
      * Initialize the file system.
      * Called before any other file system method.
@@ -61,34 +149,35 @@ class AntidoteFS extends FileSystem {
      **/
     async init(connInfo) {
         log('INIT: connInfo', JSON.stringify(connInfo));
-        const rootAttr = await antidote.register('inode_1').read();
-        if (!rootAttr || DEBUG) {
+        let root = await readMd(1);
+        if (isEmptyObject(root) || DEBUG) {
             if (DEBUG) {
                 // Populate file system with a few dummy files and dirs
-                const root = new AttrDir(1, 2, null);
+                root = new AttrDir(1, 2, null);
                 root.addChild('file.txt', 2);
-                root.addChild('folder', 3);
+                root.addChild('dirA', 3);
 
-                const fileContent = 'Hello world';
-                const f = new AttrFile(2, fileContent.length, 1, null);
-                f.addHardLinkRef(1, 'file.txt');
+                const dummyFileContent = 'Hello world';
+                const dummyFile = new AttrFile(2, dummyFileContent.length, 1, null);
+                dummyFile.addHardLinkRef(1, 'file.txt');
 
-                const d = new AttrDir(3, 2, null);
-                d.addHardLinkRef(1, 'folder');
+                const dummyDir = new AttrDir(3, 2, null);
+                dummyDir.addHardLinkRef(1, 'dirA');
 
                 await antidote.update(
-                    [antidote.register(`inode_${root.inode}`).set(root),
-                    antidote.register(`inode_${f.inode}`).set(f),
-                    antidote.register(`inode_${d.inode}`).set(d),
-                    antidote.register('data_2').set(new Buffer(fileContent))]
+                    Array.prototype.concat(
+                        mdUpdate(root),
+                        mdUpdate(dummyFile),
+                        mdUpdate(dummyDir),
+                        dataUpdate(dummyFile, dummyFileContent),
+                    )
                 );
                 log('Finished populating file system.');
                 return;
             } else {
                 // Not in debug, but didn't find root inode: create one
-                const root = new AttrDir(1, 2, null);
-                await antidote.update(
-                    antidote.register(`inode_${root.inode}`).set(root));
+                root = new AttrDir(1, 2, null);
+                await antidote.update(mdUpdate(root));
                 log('Created new root directory.');
                 return;
             }
@@ -117,11 +206,10 @@ class AntidoteFS extends FileSystem {
      **/
     async lookup(context, pino, name, reply) {
         log('LOOKUP: pino', pino, 'name', name);
-        let attr = await antidote.register(`inode_${pino}`).read();
-        if (attr && attr.children[name]) {
-            let childAttr = await
-                antidote.register(`inode_${attr.children[name]}`).read();
-            if (childAttr) {
+        let attr = await readMd(pino);
+        if (!isEmptyObject(attr) && attr.children[name]) {
+            let childAttr = await readMd(attr.children[name]);
+            if (!isEmptyObject(childAttr)) {
                 log('lookup replying: ', childAttr.inode);
                 const entry = {
                     inode: childAttr.inode,
@@ -151,13 +239,13 @@ class AntidoteFS extends FileSystem {
      **/
     async getattr(context, inode, reply) {
         log('GETATTR: ', inode);
-        let attr = await antidote.register(`inode_${inode}`).read();
-        if (attr) {
+        let attr = await readMd(inode);
+        if (!isEmptyObject(attr)) {
             log('getattr replying: ', JSON.stringify(attr));
             reply.attr(attr, TIMEOUT);
             return;
         } else {
-            reply.err(PosixError.ENOTENT);
+            reply.err(PosixError.ENOENT);
             return;
         }
     }
@@ -167,20 +255,20 @@ class AntidoteFS extends FileSystem {
      *
      * @param {Object} context Context info of the calling process.
      * @param {Number} inode Inode Number.
-     * @param {Object} attrs Attributes to be set.
+     * @param {Object} attr Attributes to be set.
      * @param {Object} reply Reply instance.
      *
      * Valid replies: reply.attr() or reply.err();
      **/
     async setattr(context, inode, attr, reply) {
         log('SETATTR inode', inode, 'attr', JSON.stringify(attr));
-        let iattr = await antidote.register(`inode_${inode}`).read();
+        let iattr = await readMd(inode);
 
         const keys = Object.keys(attr);
         for (let i = 0; i < keys.length; i++) {
             log('updating attribute', keys[i], 'to', attr[keys[i]]);
             if (keys[i] == 'atime' || keys[i] == 'mtime') {
-                if (attr[keys[i]] == -1) {
+                if (attr[keys[i]] == -1) { //TODO:
                     iattr[keys[i]] = Math.floor(new Date().getTime() / 1000);
                 } else {
                     iattr[keys[i]] = Math.floor(new Date(attr[keys[i]]).getTime() / 1000);
@@ -189,9 +277,9 @@ class AntidoteFS extends FileSystem {
                 iattr[keys[i]] = attr[keys[i]];
             }
         }
-        // log('setattr set inode ', inode, 'iattr', iattr );
-        await antidote.update(antidote.register(`inode_${inode}`).set(iattr));
+        await antidote.update(mdUpdate(iattr));
         reply.attr(iattr, TIMEOUT);
+        return;
     }
 
     /**
@@ -232,21 +320,29 @@ class AntidoteFS extends FileSystem {
     async createentry(pino, name, mode, rdev, isdir, reply) {
         // log('CREATEENTRY pino', pino, 'name', name, 'mode', mode, 'rdev', rdev, 'isdir', isdir);
         const inode = getRandomIno();
-
         let st = isdir ? new AttrDir(inode, 2, S_IFDIR | mode) :
             new AttrFile(inode, 0, 1, S_IFREG | mode);
         st.addHardLinkRef(pino, name);
 
-        let attr = await antidote.register(`inode_${pino}`).read();
-        if (attr) {
-            attr.children[name] = inode;
-            await antidote.update([
-                antidote.register(`inode_${pino}`).set(attr),
-                antidote.register(`inode_${inode}`).set(st),
-            ]);
-            reply.entry({ inode: inode, attr: st, generation: 1 });
-            return;
+        let attr = await readMd(pino);
+        if (!isEmptyObject(attr)) {
+            if (!attr.children[name]) {
+                attr.children[name] = inode;
+                await antidote.update(
+                    Array.prototype.concat(
+                        mdUpdate(attr),
+                        mdUpdate(st),
+                    )
+                );
+                reply.entry({ inode: inode, attr: st, generation: 1 });
+                return;
+            } else {
+                // This name already exists in the directory
+                reply.err(PosixError.EEXIST)
+                return;
+            }
         } else {
+            // Parent inode does not exist
             reply.err(ERR.ENXIO);
             return;
         }
@@ -264,22 +360,25 @@ class AntidoteFS extends FileSystem {
      **/
     async unlink(context, pino, name, reply) {
         log('UNLINK pino', pino, 'name', name);
-        let pattr = await antidote.register(`inode_${pino}`).read();
-        if (pattr) {
+        let pattr = await readMd(pino);
+        if (!isEmptyObject(pattr)) {
             assert(!pattr.isFile);
             const ino = pattr.children[name];
-            let attr = await antidote.register(`inode_${ino}`).read();
-            if (attr) {
+            let attr = await readMd(ino);
+            if (!isEmptyObject(attr)) {
                 assert(attr.isFile);
                 attr.nlink--;
                 delete attr.hlinks[pino];
                 delete pattr.children[name];
-                await antidote.update([
-                    antidote.register(`inode_${pino}`).set(pattr),
-                    antidote.register(`inode_${ino}`).set(
-                        attr.nlink ? attr : null
-                    ),
-                ]);
+                log('unlink: ', JSON.stringify(pattr), JSON.stringify(attr));
+                await antidote.update(
+                    Array.prototype.concat(
+                        mdDeleteChild(pattr, name),
+                        (attr.nlink ?
+                            mdDeleteHlink(attr, pino) :
+                            mdDelete(attr)),
+                    )
+                );
                 reply.err(0);
                 return;
             } else {
@@ -304,18 +403,21 @@ class AntidoteFS extends FileSystem {
      **/
     async rmdir(context, pino, name, reply) {
         log('RMDIR pino', pino, 'name', name);
-        let pattr = await antidote.register(`inode_${pino}`).read();
-        if (pattr) {
+        let pattr = await readMd(pino);
+        if (!isEmptyObject(pattr)) {
+            assert(!pattr.isFile);
             const ino = pattr.children[name];
-            let attr = await antidote.register(`inode_${ino}`).read();
-            if (attr) {
+            let attr = await readMd(ino);
+            if (!isEmptyObject(attr)) {
                 if (!attr.isFile) {
                     if (Object.keys(attr.children).length <= 0) {
                         delete pattr.children[name];
-                        await antidote.update([
-                            antidote.register(`inode_${pino}`).set(pattr),
-                            antidote.register(`inode_${ino}`).set(null),
-                        ]);
+                        await antidote.update(
+                            Array.prototype.concat(
+                                mdDeleteChild(pattr, name),
+                                mdDelete(attr)
+                            )
+                        );
                         reply.err(0);
                         return;
                     } else {
@@ -353,8 +455,8 @@ class AntidoteFS extends FileSystem {
      **/
     async symlink(context, pino, link, name, reply) {
         log('SYMLINK link', link, 'pino', pino, 'name', name);
-        let pattr = await antidote.register(`inode_${pino}`).read();
-        if (pattr) {
+        let pattr = await readMd(pino);
+        if (!isEmptyObject(pattr)) {
             const existingIno = pattr.children[name];
             if (!existingIno) {
                 const inode = getRandomIno();
@@ -368,9 +470,11 @@ class AntidoteFS extends FileSystem {
                  * Ex.: `ln -s myfile mylink` will write myfile
                  */
                 await antidote.update(
-                    [antidote.register(`inode_${pino}`).set(pattr),
-                    antidote.register(`inode_${inode}`).set(st),
-                    antidote.register(`data_${inode}`).set(new Buffer(link))]
+                    Array.prototype.concat(
+                        mdUpdate(pattr),
+                        mdUpdate(st),
+                        dataUpdate(st, link)
+                    )
                 );
 
                 const entry = {
@@ -403,7 +507,7 @@ class AntidoteFS extends FileSystem {
      **/
     async readlink(context, inode, reply) {
         log('READLINK ino', inode);
-        let data = await antidote.register(`data_${inode}`).read();
+        let data = await readData(inode);
         if (data) {
             // log('read: ', data.toString());
             reply.readlink(data.toString());
@@ -427,9 +531,9 @@ class AntidoteFS extends FileSystem {
      **/
     async link(context, inode, newpino, newname, reply) {
         log('LINK inode', inode, 'newpino', newpino, 'newname', newname);
-        let pattr = await antidote.register(`inode_${newpino}`).read();
-        let attr = await antidote.register(`inode_${inode}`).read();
-        if (pattr && attr) {
+        let pattr = await readMd(newpino);
+        let attr = await readMd(inode);
+        if (!isEmptyObject(pattr) && !isEmptyObject(attr)) {
             if (attr.isFile) {
                 const existingIno = pattr.children[newname];
                 if (!existingIno) {
@@ -438,10 +542,12 @@ class AntidoteFS extends FileSystem {
                     attr.nlink++;
                     attr.hlinks[newpino] = newname;
 
-                    await antidote.update([
-                        antidote.register(`inode_${newpino}`).set(pattr),
-                        antidote.register(`inode_${inode}`).set(attr),
-                    ]);
+                    await antidote.update(
+                        Array.prototype.concat(
+                            mdUpdate(pattr),
+                            mdUpdate(attr),
+                        )
+                    );
 
                     const entry = {
                         inode: attr.inode,
@@ -483,11 +589,11 @@ class AntidoteFS extends FileSystem {
         log('RENAME pino', pino, 'name', name, 'newpino', newpino,
             'newname', newname);
 
-        let pattr = await antidote.register(`inode_${pino}`).read();
-        if (pattr && pattr.children[name]) {
+        let pattr = await readMd(pino);
+        if (!isEmptyObject(pattr) && pattr.children[name]) {
             assert(!pattr.isFile);
             const ino = pattr.children[name];
-            let attr = await antidote.register(`inode_${ino}`).read();
+            let attr = await readMd(ino);
             delete attr.hlinks[pino];
             attr.hlinks[newpino] = newname;
             delete pattr.children[name];
@@ -495,21 +601,28 @@ class AntidoteFS extends FileSystem {
             if (pino == newpino) {
                 // rename in the same directory    
                 pattr.children[newname] = ino;
-                await antidote.update([
-                    antidote.register(`inode_${pino}`).set(pattr),
-                    antidote.register(`inode_${ino}`).set(attr),
-                ]);
+                await antidote.update(
+                    Array.prototype.concat(
+                        mdDeleteChild(pattr, name),
+                        //mdDeleteHlink(attr, pino),
+                        mdUpdate(attr),
+                        mdUpdate(pattr)
+                    )
+                );
             } else {
                 // move to another directory
-                let pnattr = await antidote.register(`inode_${newpino}`).read();
-                assert(pnattr && !pnattr.isFile);
+                let pnattr = await readMd(newpino);
+                assert(!isEmptyObject(pnattr) && !pnattr.isFile);
                 pnattr.children[newname] = ino;
 
-                await antidote.update([
-                    antidote.register(`inode_${newpino}`).set(pnattr),
-                    antidote.register(`inode_${pino}`).set(pattr),
-                    antidote.register(`inode_${ino}`).set(attr),
-                ]);
+                await antidote.update(
+                    Array.prototype.concat(
+                        mdDeleteChild(pattr, name),
+                        mdDeleteHlink(attr, pino),
+                        mdUpdate(attr),
+                        mdUpdate(pnattr)
+                    )
+                );
             }
             reply.err(0);
             return;
@@ -570,7 +683,7 @@ class AntidoteFS extends FileSystem {
      **/
     async read(context, inode, len, offset, fileInfo, reply) {
         log('READ inode', inode, 'len', len, 'off', offset);
-        let data = await antidote.register(`data_${inode}`).read();
+        let data = await readData(inode);
         if (data) {
             log('read: ', data);
             const content = data.slice(offset,
@@ -598,13 +711,13 @@ class AntidoteFS extends FileSystem {
          * fileInfo will contain the value set by the opendir method, 
          * or will be undefined if the opendir method didn't set any value.
          */
-        let attr = await antidote.register(`inode_${inode}`).read();
-        if (attr) {
+        let attr = await readMd(inode);
+        if (!isEmptyObject(attr)) {
             if (Object.keys(attr.children).length > 0) {
                 for (let name in attr.children) {
                     if (attr.children.hasOwnProperty(name)) {
-                        let ch = await antidote.register(`inode_${attr.children[name]}`).read();
-                        if (ch) {
+                        let ch = await readMd(attr.children[name]);
+                        if (!isEmptyObject(ch)) {
                             log('readdir replying: inode', ch.inode, 'name', name);
                             reply.addDirEntry(name, size, ch, offset);
                         }
@@ -618,6 +731,7 @@ class AntidoteFS extends FileSystem {
                 return;
             }
         } else {
+            // Target inode does not exist
             reply.err(PosixError.ENOENT);
             return;
         }
@@ -634,9 +748,9 @@ class AntidoteFS extends FileSystem {
      */
     async write(context, inode, buf, off, fi, reply) {
         log('WRITE inode', inode, 'buf.length', buf.length, 'off', off, 'buf', buf);
-        let attr = await antidote.register(`inode_${inode}`).read();
-        if (attr) {
-            let data = await antidote.register(`data_${inode}`).read();
+        let attr = await readMd(inode);
+        if (!isEmptyObject(attr)) {
+            let data = await readData(inode);
             if (data != null) {
                 data = data.slice(0, off) + buf +
                     (off + buf.length >= attr.size ? '' :
@@ -645,10 +759,12 @@ class AntidoteFS extends FileSystem {
                 data = buf;
             }
             attr.size = data.length;
-            await antidote.update([
-                antidote.register(`inode_${inode}`).set(attr),
-                antidote.register(`data_${inode}`).set(data),
-            ]);
+            await antidote.update(
+                Array.prototype.concat(
+                    mdUpdate(attr),
+                    dataUpdate(attr, data),
+                )
+            );
             reply.write(buf.length);
             return;
         } else {
