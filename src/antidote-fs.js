@@ -25,7 +25,13 @@ function assert(...args) {
     }
 }
 
+// Fuse inode attributes' validity timeout
 const TIMEOUT = 3600;
+
+// File modes
+const S_IFREG = 0x8000; // regular file
+const S_IFDIR = 0x4000; // directory
+const S_IFLNK = 0xA000; // symbolic link
 
 // Inode generation
 const INODE_HIGH = Math.pow(2, 20);
@@ -36,15 +42,6 @@ function getRandomIno() {
     return Math.floor(Math.random() * (INODE_HIGH - INODE_LOW) + INODE_LOW);
 }
 
-// File modes
-const S_IFREG = 0x8000; // regular file
-const S_IFDIR = 0x4000; // directory
-const S_IFLNK = 0xA000; // symbolic link
-// const S_IFMT = 0xF000; // bit mask for the file type bit field
-// const S_IFSOCK = 0xC000; // socket
-// const S_IFBLK = 0x6000; // block device
-// const S_IFCHR = 0x2000; // character device
-// const S_IFIFO = 0x1000; // FIFO
 
 function isEmptyObject(obj) {
     return !Object.keys(obj).length;
@@ -66,7 +63,9 @@ function mdUpdate(attr) {
     updates.push(map.register('isFile').set(attr.isFile));
     for (let name in attr.children) {
         if (attr.children.hasOwnProperty(name)) {
-            updates.push(map.map('children').register(name).set(attr.children[name]));
+            // Always write a single inode per child name.
+            assert(!Array.isArray(attr.children[name]));
+            updates.push(map.map('children').set(name).add(attr.children[name]));
         }
     }
     for (let name in attr.hlinks) {
@@ -98,7 +97,7 @@ function mdDelete(attr) {
 
 function mdDeleteChild(attr, name) {
     return antidote.map(`inode_${attr.inode}`).map('children').remove(
-        antidote.register(name));
+        antidote.set(name));
 }
 
 function mdDeleteHlink(attr, ino) {
@@ -116,8 +115,23 @@ function dataUpdate(attr, data) {
 async function readMd(inode) {
     let md = (await antidote.map(`inode_${inode}`).read()).toJsObject();
     if (!isEmptyObject(md)) {
-        // Because empty maps are not returned by Antidote
-        if (!md.children) md.children = {};
+        if (!md.children)  {
+            // Because empty maps are not returned by Antidote
+            md.children = {};
+        } else {
+            for (let name in md.children) {
+                if (md.children.hasOwnProperty(name)) { 
+                    if (md.children[name].length == 1) {
+                        md.children[name] = md.children[name][0];
+                    } else {
+                        // Merge children
+                        log("MERGE conflict");
+                        // TODO: 
+                    }
+                }
+            }
+        }
+
         if (!md.hlinks) md.hlinks = {};
     }
     return md;
@@ -279,7 +293,7 @@ class AntidoteFS extends FileSystem {
     }
 
     /**
-     * Create file node.
+     * Create a file.
      *
      * @param {Object} context Context info of the calling process.
      * @param {Number} parent Inode number of the parent directory.
@@ -316,21 +330,21 @@ class AntidoteFS extends FileSystem {
     async createentry(pino, name, mode, rdev, isdir, reply) {
         // log('CREATEENTRY pino', pino, 'name', name, 'mode', mode, 'rdev', rdev, 'isdir', isdir);
         const inode = getRandomIno();
-        let st = isdir ? new AttrDir(inode, 2, S_IFDIR | mode) :
+        let attr = isdir ? new AttrDir(inode, 2, S_IFDIR | mode) :
             new AttrFile(inode, 0, 1, S_IFREG | mode);
-        st.addHardLinkRef(pino, name);
+        attr.addHardLinkRef(pino, name);
 
-        let attr = await readMd(pino);
-        if (!isEmptyObject(attr)) {
-            if (!attr.children[name]) {
-                attr.children[name] = inode;
+        let pattr = await readMd(pino);
+        if (!isEmptyObject(pattr)) {
+            if (!pattr.children[name]) {
+                pattr.children[name] = inode;
                 await antidote.update(
                     Array.prototype.concat(
+                        mdUpdate(pattr),
                         mdUpdate(attr),
-                        mdUpdate(st),
                     )
                 );
-                reply.entry({ inode: inode, attr: st, generation: 1 });
+                reply.entry({ inode: inode, attr: attr, generation: 1 });
                 return;
             } else {
                 // This name already exists in the directory
@@ -599,9 +613,13 @@ class AntidoteFS extends FileSystem {
             if (pino == newpino) {
                 // rename in the same directory    
                 pattr.children[newname] = ino;
+                log('rename same dir, writing pattr', JSON.stringify(pattr));
+                log('rename same dir, writing attr', JSON.stringify(attr));
                 await antidote.update(
                     Array.prototype.concat(
                         mdDeleteChild(pattr, name),
+                        // overwriting: delete references to inodes to the same name
+                        mdDeleteChild(pattr, newname),
                         mdDeleteHlink(attr, pino),
                         mdUpdate(attr),
                         mdUpdate(pattr)
@@ -616,6 +634,8 @@ class AntidoteFS extends FileSystem {
                 await antidote.update(
                     Array.prototype.concat(
                         mdDeleteChild(pattr, name),
+                        // overwriting: delete references to inodes to the same name
+                        mdDeleteChild(pnattr, newname),
                         mdDeleteHlink(attr, pino),
                         mdUpdate(attr),
                         mdUpdate(pnattr)
@@ -771,89 +791,36 @@ class AntidoteFS extends FileSystem {
         }
     }
 
-    /**
-     * 
-     * @param {*} context 
-     * @param {*} inode 
-     * @param {*} fi 
-     * @param {*} reply 
-     */
     async flush(context, inode, fi, reply) {
         log('FLUSH ino', inode);
-        // TODO: ?
         reply.err(0);
     }
 
-    /**
-     * 
-     */
     async fsync(context, ino, datasync, fi, reply) {
         log('FSYNC ino', ino, 'datasync', datasync);
-        // TODO: ?
         reply.err(0);
     }
 
-    /**
-     * 
-     * @param {*} context 
-     * @param {*} inode 
-     * @param {*} datasync 
-     * @param {*} fi 
-     * @param {*} reply 
-     */
     async fsyncdir(context, inode, datasync, fi, reply) {
         log('FSYNCDIR inode', inode, 'datasync', datasync);
-        // TODO: ?
         reply.err(0);
     }
 
-    /**
-     * 
-     * @param {*} context 
-     * @param {*} inode 
-     * @param {*} fileInfo 
-     * @param {*} reply 
-     */
     async release(context, inode, fileInfo, reply) {
         log('RELEASE inode', inode);
         reply.err(0);
     }
 
-    /**
-     * 
-     * @param {*} context 
-     * @param {*} inode 
-     * @param {*} fileInfo 
-     * @param {*} reply 
-     */
     async releasedir(context, inode, fileInfo, reply) {
         log('RELEASEDIR: ', inode);
         reply.err(0);
     }
 
-
-    /**
-     * 
-     * @param {*} context 
-     * @param {*} inode 
-     * @param {*} mask 
-     * @param {*} reply 
-     */
     async access(context, inode, mask, reply) {
         log('ACCESS inode', inode, 'mask', mask);
-        // TODO: check validity of access
         reply.err(0);
     }
 
-    /**
-     * 
-     * @param {*} context 
-     * @param {*} pino 
-     * @param {*} name 
-     * @param {*} mode 
-     * @param {*} fi 
-     * @param {*} reply 
-     */
     async create(context, pino, name, mode, fi, reply) {
         log('CREATE pino', pino, 'name', name, 'mode', mode);
         reply.err(PosixError.ENOSYS);
