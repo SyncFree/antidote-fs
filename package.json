@@ -22,7 +22,7 @@
     "readmeFilename": "README.md",
     "dependencies": {
         "antidote_ts_client": "^0.1.7",
-        "fusejs": "^1.4.3"
+        "fusejs": "pviotti/fusejs"
     },
     "devDependencies": {
         "chai": "^4.1.2",
