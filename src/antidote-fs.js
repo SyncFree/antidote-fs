@@ -864,7 +864,7 @@ class AntidoteFS extends FileSystem {
                         } else {
                             // Merge naming conflicts
                             log('Merging naming conflicts: ', md);
-                            await mergeNamingConflicts(md, name);
+                            await this.mergeNamingConflicts(md, name);
                         }
                     }
                 }
@@ -898,7 +898,7 @@ class AntidoteFS extends FileSystem {
         // Get metadata of conflicting inodes
         let dirs = [], files = [];
         for (let i = 0; i < pmd.children[name].length; i++) {
-            let childMd = await readMd(pmd.children[name][i]);
+            let childMd = await this.readMd(pmd.children[name][i]);
             if (childMd.isFile) files.push(childMd);
             else dirs.push(childMd);
         }
@@ -909,7 +909,7 @@ class AntidoteFS extends FileSystem {
         if (dirs.length > 1) {
             // Merge conflicting directories
             log('Merging conflicting directories')
-            let mergedDirMd = mergeDirs(dirs);
+            let mergedDirMd = this.mergeDirs(dirs);
             dirs.forEach(function (dir, index, array) {
                 // Remove conflicting inode references
                 let indexChild = pmd.children[name].indexOf(dir.inode);
@@ -917,15 +917,15 @@ class AntidoteFS extends FileSystem {
                 updates.push(
                     antidote.map(`inode_${pmd.inode}`).map('children').set(name).remove(dir.inode)
                 );
-                updates = updates.concat(mdDelete(dir));
-            });
+                updates = updates.concat(this.mdDelete(dir));
+            }, this);
             // Add reference to merged dir
             pmd.children[name] = mergedDirMd.inode;
             log('merged dir md:', mergedDirMd);
             updates.push(
                 antidote.map(`inode_${pmd.inode}`).map('children').set(name).add(mergedDirMd.inode)
             );
-            updates = updates.concat(mdUpdate(mergedDirMd));
+            updates = updates.concat(this.mdUpdate(mergedDirMd));
         }
 
         // If there are several conflicting files, or just 1 and some directories
@@ -948,7 +948,7 @@ class AntidoteFS extends FileSystem {
                 // If the conflicting inodes are only files, 
                 // we remove the original child name 
                 // since conflicting files have been renamed
-                updates.push(mdDeleteChild(pmd, name));
+                updates.push(this.mdDeleteChild(pmd, name));
             }
         }
 
@@ -963,7 +963,7 @@ class AntidoteFS extends FileSystem {
      * @param {Array} dirs Array of directories attributes to merge.
      */
     mergeDirs(dirs) {
-        let mergedDirMd = new AttrDir(getRandomIno(), 2, null);
+        let mergedDirMd = new AttrDir(this.getRandomIno(), 2, null);
 
         let minMode = Number.MAX_SAFE_INTEGER;
         dirs.forEach(function (dir) {
@@ -1009,3 +1009,4 @@ function unmount() {
     exec('fusermount -u ' + mountPoint);
 }
 process.on('SIGINT', unmount);
+process.on('SIGTERM', unmount);
