@@ -24,6 +24,9 @@ function assert(...args) {
         nodejsAssert(...args);
     }
 }
+function isEmptyObject(obj) {
+    return !Object.keys(obj).length;
+}
 
 // Fuse inode attributes' validity timeout
 const TIMEOUT = 3600;
@@ -36,213 +39,15 @@ const S_IFLNK = 0xA000; // symbolic link
 // Inode generation
 const INODE_HIGH = Math.pow(2, 20);
 const INODE_LOW = 1000;
-// Create a random inode number.
-function getRandomIno() {
-    // In production, use UUID or include unique per-client or per-site prefix
-    return Math.floor(Math.random() * (INODE_HIGH - INODE_LOW) + INODE_LOW);
-}
 
-
-function isEmptyObject(obj) {
-    return !Object.keys(obj).length;
-}
-
-function mdUpdate(attr) {
-    let updates = [];
-    const map = antidote.map(`inode_${attr.inode}`);
-    updates.push(map.register('inode').set(attr.inode));
-    updates.push(map.register('mode').set(attr.mode));
-    updates.push(map.register('ctime').set(attr.ctime));
-    updates.push(map.register('mtime').set(attr.mtime));
-    updates.push(map.register('atime').set(attr.atime));
-    updates.push(map.register('rdev').set(attr.rdev));
-    updates.push(map.register('size').set(attr.size));
-    updates.push(map.integer('nlink').set(attr.nlink));
-    updates.push(map.register('uid').set(attr.uid));
-    updates.push(map.register('gid').set(attr.gid));
-    updates.push(map.register('isFile').set(attr.isFile));
-    for (let name in attr.children) {
-        if (attr.children.hasOwnProperty(name)) {
-            // Always write a single inode per child name.
-            assert(!Array.isArray(attr.children[name]));
-            updates.push(map.map('children').set(name).add(attr.children[name]));
-        }
-    }
-    for (let name in attr.hlinks) {
-        if (attr.hlinks.hasOwnProperty(name)) {
-            updates.push(map.map('hlinks').register(name).set(attr.hlinks[name]));
-        }
-    }
-    return updates;
-}
-
-function mdDelete(attr) {
-    const map = antidote.map(`inode_${attr.inode}`);
-    return map.removeAll([
-        map.register('inode'),
-        map.register('mode'),
-        map.register('ctime'),
-        map.register('mtime'),
-        map.register('atime'),
-        map.register('rdev'),
-        map.register('size'),
-        map.integer('nlink'),
-        map.register('uid'),
-        map.register('gid'),
-        map.register('isFile'),
-        map.map('children'),
-        map.map('hlinks'),
-    ]);
-}
-
-function mdDeleteChild(attr, name) {
-    return antidote.map(`inode_${attr.inode}`).map('children').remove(
-        antidote.set(name));
-}
-
-function mdDeleteHlink(attr, ino) {
-    return Array.prototype.concat(
-        antidote.map(`inode_${attr.inode}`).map('hlinks').remove(
-            antidote.register(ino.toString())),
-        antidote.map(`inode_${attr.inode}`).integer('nlink').increment(-1)
-    );
-}
-
-function dataUpdate(attr, data) {
-    return antidote.register(`data_${attr.inode}`).set(new Buffer(data));
-}
-
-async function readMd(inode) {
-    let md = (await antidote.map(`inode_${inode}`).read()).toJsObject();
-    if (!isEmptyObject(md)) {
-        if (!md.children) {
-            // Because empty maps are not returned by Antidote
-            md.children = {};
-        } else {
-            for (let name in md.children) {
-                if (md.children.hasOwnProperty(name)) {
-                    //log('reading children: ', name, ': ', md.children[name]);
-                    assert(md.children[name].length != 0);
-                    if (md.children[name].length == 1) {
-                        md.children[name] = md.children[name][0];
-                    } else {
-                        // Merge naming conflicts
-                        log('Merging naming conflicts: ', md);
-                        await mergeNamingConflicts(md, name);
-                    }
-                }
-            }
-        }
-
-        if (!md.hlinks) md.hlinks = {};
-    }
-    return md;
-}
-
-async function readData(inode) {
-    return await antidote.register(`data_${inode}`).read();
-}
 
 /**
- * Merge naming conflicts in a same directory:
- *  - multiple files with the same name: rename files $file-CONFLICT_$n
- *  - multiple files and one folder with the same name: rename files as above
- *  - multiple directories with the same name: merge directories
+ * AntidoteFS main class.
+ * Extends fusejs.FileSystem and includes
+ * functions to exchange data with AntidoteDB.
  * 
- * @param {Object} pmd Parent directory attributes object containing conflicts.
- * @param {String} name The name in parent directory's children having conflicts.
- */
-async function mergeNamingConflicts(pmd, name) {
-
-    // Get metadata of conflicting inodes
-    let dirs = [], files = [];
-    for (let i = 0; i < pmd.children[name].length; i++) {
-        let childMd = await readMd(pmd.children[name][i]);
-        if (childMd.isFile) files.push(childMd);
-        else dirs.push(childMd);
-    }
-    log('Conflicts - dirs: ', dirs, '- files:', files);
-
-    let updates = [];
-    // If there are several conflicting directories
-    if (dirs.length > 1) {
-        // Merge conflicting directories
-        log('Merging conflicting directories')
-        let mergedDirMd = mergeDirs(dirs);
-        dirs.forEach(function (dir, index, array) {
-            // Remove conflicting inode references
-            let indexChild = pmd.children[name].indexOf(dir.inode);
-            pmd.children[name].splice(indexChild, 1);
-            updates.push(
-                antidote.map(`inode_${pmd.inode}`).map('children').set(name).remove(dir.inode)
-            );
-            updates = updates.concat(mdDelete(dir));
-        });
-        // Add reference to merged dir
-        pmd.children[name] = mergedDirMd.inode;
-        log('merged dir md:', mergedDirMd);
-        updates.push(
-            antidote.map(`inode_${pmd.inode}`).map('children').set(name).add(mergedDirMd.inode)
-        );
-        updates = updates.concat(mdUpdate(mergedDirMd));
-    }
-
-    // If there are several conflicting files, or just 1 and some directories
-    if (files.length > 1 || (dirs.length + files.length > 1)) {
-        // Rename files in parent's children list
-        log('Renaming conflicting files')
-        files.forEach(function (file, index, array) {
-            const newname = name + '-CONFLICT_' + index;
-            updates.push(
-                antidote.map(`inode_${pmd.inode}`).map('children').set(name).remove(file.inode),
-                antidote.map(`inode_${pmd.inode}`).map('children').set(newname).add(file.inode)
-            );
-
-            pmd.children[newname] = file.inode;
-            const indexChild = pmd.children[name].indexOf(file.inode);
-            pmd.children[name].splice(indexChild, 1);
-        });
-
-        if (dirs.length == 0) {
-            // If the conflicting inodes are only files, 
-            // we remove the original child name 
-            // since conflicting files have been renamed
-            updates.push(mdDeleteChild(pmd, name));
-        }
-    }
-
-    // Write merged metadata
-    await antidote.update(updates);
-}
-
-/**
- * Returns a new directory resulting from merging 
- * the directories given as input.
- * 
- * @param {Array} dirs Array of directories attributes to merge.
- */
-function mergeDirs(dirs) {
-    let mergedDirMd = new AttrDir(getRandomIno(), 2, null);
-
-    let minMode = Number.MAX_SAFE_INTEGER;
-    dirs.forEach(function (dir) {
-        for (let name in dir.children) {
-            if (dir.children.hasOwnProperty(name)) {
-                // TODO: overwrites conflicting children: recursive merge?
-                mergedDirMd.addChild(name, dir.children[name]);
-            }
-        }
-        if (dir.mode < minMode) minMode = dir.mode;
-    });
-    mergedDirMd.mode = minMode;
-    // XXX uid, gid?
-    return mergedDirMd;
-}
-
-
-
-/**
- * Not implemented Fuse operations:
+ * NB: not implemented Fuse operations:
+ * flush, fsync, fsyncdir, release, access,
  * forget, multiforget, getlk, setlk, setxattr
  * getxattr, listxattr, removexattr, bmap, ioctl, poll.
  */
@@ -258,7 +63,7 @@ class AntidoteFS extends FileSystem {
      **/
     async init(connInfo) {
         log('INIT: connInfo', JSON.stringify(connInfo));
-        let root = await readMd(1);
+        let root = await this.readMd(1);
         if (isEmptyObject(root) || DEBUG) {
             if (DEBUG) {
                 // Populate file system with a few dummy files and dirs
@@ -275,10 +80,10 @@ class AntidoteFS extends FileSystem {
 
                 await antidote.update(
                     Array.prototype.concat(
-                        mdUpdate(root),
-                        mdUpdate(dummyFile),
-                        mdUpdate(dummyDir),
-                        dataUpdate(dummyFile, dummyFileContent),
+                        this.mdUpdate(root),
+                        this.mdUpdate(dummyFile),
+                        this.mdUpdate(dummyDir),
+                        this.dataUpdate(dummyFile, dummyFileContent),
                     )
                 );
                 log('Finished populating file system.');
@@ -286,7 +91,7 @@ class AntidoteFS extends FileSystem {
             } else {
                 // Not in debug, but didn't find root inode: create one
                 root = new AttrDir(1, 2, null);
-                await antidote.update(mdUpdate(root));
+                await antidote.update(this.mdUpdate(root));
                 log('Created new root directory.');
                 return;
             }
@@ -315,9 +120,9 @@ class AntidoteFS extends FileSystem {
      **/
     async lookup(context, pino, name, reply) {
         log('LOOKUP: pino', pino, 'name', name);
-        let attr = await readMd(pino);
+        let attr = await this.readMd(pino);
         if (!isEmptyObject(attr) && attr.children[name]) {
-            let childAttr = await readMd(attr.children[name]);
+            let childAttr = await this.readMd(attr.children[name]);
             if (!isEmptyObject(childAttr)) {
                 log('lookup replying: ', childAttr.inode);
                 const entry = {
@@ -348,7 +153,7 @@ class AntidoteFS extends FileSystem {
      **/
     async getattr(context, inode, reply) {
         log('GETATTR: ', inode);
-        let attr = await readMd(inode);
+        let attr = await this.readMd(inode);
         if (!isEmptyObject(attr)) {
             log('getattr replying: ', JSON.stringify(attr));
             reply.attr(attr, TIMEOUT);
@@ -371,7 +176,7 @@ class AntidoteFS extends FileSystem {
      **/
     async setattr(context, inode, attr, reply) {
         log('SETATTR inode', inode, 'attr', JSON.stringify(attr));
-        let iattr = await readMd(inode);
+        let iattr = await this.readMd(inode);
 
         const keys = Object.keys(attr);
         for (let i = 0; i < keys.length; i++) {
@@ -386,7 +191,7 @@ class AntidoteFS extends FileSystem {
                 iattr[keys[i]] = attr[keys[i]];
             }
         }
-        await antidote.update(mdUpdate(iattr));
+        await antidote.update(this.mdUpdate(iattr));
         reply.attr(iattr, TIMEOUT);
         return;
     }
@@ -407,7 +212,7 @@ class AntidoteFS extends FileSystem {
      **/
     async mknod(context, parent, name, mode, rdev, reply) {
         log('MKNOD pino', parent, 'name', name, 'mode', mode, 'rdev', rdev);
-        this.createentry(parent, name, mode, rdev, false, reply);
+        this.createEntry(parent, name, mode, rdev, false, reply);
     }
 
     /**
@@ -423,24 +228,24 @@ class AntidoteFS extends FileSystem {
      **/
     async mkdir(context, parent, name, mode, reply) {
         log('MKDIR pino', parent, 'name', name, 'mode', mode);
-        this.createentry(parent, name, mode, 0, true, reply);
+        this.createEntry(parent, name, mode, 0, true, reply);
     }
 
-    async createentry(pino, name, mode, rdev, isdir, reply) {
+    async createEntry(pino, name, mode, rdev, isdir, reply) {
         // log('CREATEENTRY pino', pino, 'name', name, 'mode', mode, 'rdev', rdev, 'isdir', isdir);
-        const inode = getRandomIno();
+        const inode = this.getRandomIno();
         let attr = isdir ? new AttrDir(inode, 2, S_IFDIR | mode) :
             new AttrFile(inode, 0, 1, S_IFREG | mode);
         attr.addHardLinkRef(pino, name);
 
-        let pattr = await readMd(pino);
+        let pattr = await this.readMd(pino);
         if (!isEmptyObject(pattr)) {
             if (!pattr.children[name]) {
                 pattr.children[name] = inode;
                 await antidote.update(
                     Array.prototype.concat(
-                        mdUpdate(pattr),
-                        mdUpdate(attr),
+                        this.mdUpdate(pattr),
+                        this.mdUpdate(attr),
                     )
                 );
                 reply.entry({ inode: inode, attr: attr, generation: 1 });
@@ -469,11 +274,11 @@ class AntidoteFS extends FileSystem {
      **/
     async unlink(context, pino, name, reply) {
         log('UNLINK pino', pino, 'name', name);
-        let pattr = await readMd(pino);
+        let pattr = await this.readMd(pino);
         if (!isEmptyObject(pattr)) {
             assert(!pattr.isFile);
             const ino = pattr.children[name];
-            let attr = await readMd(ino);
+            let attr = await this.readMd(ino);
             if (!isEmptyObject(attr)) {
                 assert(attr.isFile);
                 attr.nlink--;
@@ -482,10 +287,10 @@ class AntidoteFS extends FileSystem {
                 log('unlink: ', JSON.stringify(pattr), JSON.stringify(attr));
                 await antidote.update(
                     Array.prototype.concat(
-                        mdDeleteChild(pattr, name),
+                        this.mdDeleteChild(pattr, name),
                         (attr.nlink ?
-                            mdDeleteHlink(attr, pino) :
-                            mdDelete(attr)),
+                            this.mdDeleteHlink(attr, pino) :
+                            this.mdDelete(attr)),
                     )
                 );
                 reply.err(0);
@@ -514,19 +319,19 @@ class AntidoteFS extends FileSystem {
      **/
     async rmdir(context, pino, name, reply) {
         log('RMDIR pino', pino, 'name', name);
-        let pattr = await readMd(pino);
+        let pattr = await this.readMd(pino);
         if (!isEmptyObject(pattr)) {
             assert(!pattr.isFile);
             const ino = pattr.children[name];
-            let attr = await readMd(ino);
+            let attr = await this.readMd(ino);
             if (!isEmptyObject(attr)) {
                 if (!attr.isFile) {
                     if (Object.keys(attr.children).length <= 0) {
                         delete pattr.children[name];
                         await antidote.update(
                             Array.prototype.concat(
-                                mdDeleteChild(pattr, name),
-                                mdDelete(attr)
+                                this.mdDeleteChild(pattr, name),
+                                this.mdDelete(attr)
                             )
                         );
                         reply.err(0);
@@ -566,11 +371,11 @@ class AntidoteFS extends FileSystem {
      **/
     async symlink(context, pino, link, name, reply) {
         log('SYMLINK link', link, 'pino', pino, 'name', name);
-        let pattr = await readMd(pino);
+        let pattr = await this.readMd(pino);
         if (!isEmptyObject(pattr)) {
             const existingIno = pattr.children[name];
             if (!existingIno) {
-                const inode = getRandomIno();
+                const inode = this.getRandomIno();
                 let st = new AttrFile(inode, link.length, 1, S_IFLNK | 0x124);
                 st.addHardLinkRef(pino, name);
 
@@ -582,9 +387,9 @@ class AntidoteFS extends FileSystem {
                  */
                 await antidote.update(
                     Array.prototype.concat(
-                        mdUpdate(pattr),
-                        mdUpdate(st),
-                        dataUpdate(st, link)
+                        this.mdUpdate(pattr),
+                        this.mdUpdate(st),
+                        this.dataUpdate(st, link)
                     )
                 );
 
@@ -618,7 +423,7 @@ class AntidoteFS extends FileSystem {
      **/
     async readlink(context, inode, reply) {
         log('READLINK ino', inode);
-        let data = await readData(inode);
+        let data = await this.readData(inode);
         if (data) {
             // log('read: ', data.toString());
             reply.readlink(data.toString());
@@ -642,8 +447,8 @@ class AntidoteFS extends FileSystem {
      **/
     async link(context, inode, newpino, newname, reply) {
         log('LINK inode', inode, 'newpino', newpino, 'newname', newname);
-        let pattr = await readMd(newpino);
-        let attr = await readMd(inode);
+        let pattr = await this.readMd(newpino);
+        let attr = await this.readMd(inode);
         if (!isEmptyObject(pattr) && !isEmptyObject(attr)) {
             if (attr.isFile) {
                 const existingIno = pattr.children[newname];
@@ -655,8 +460,8 @@ class AntidoteFS extends FileSystem {
 
                     await antidote.update(
                         Array.prototype.concat(
-                            mdUpdate(pattr),
-                            mdUpdate(attr),
+                            this.mdUpdate(pattr),
+                            this.mdUpdate(attr),
                         )
                     );
 
@@ -700,11 +505,11 @@ class AntidoteFS extends FileSystem {
         log('RENAME pino', pino, 'name', name, 'newpino', newpino,
             'newname', newname);
 
-        let pattr = await readMd(pino);
+        let pattr = await this.readMd(pino);
         if (!isEmptyObject(pattr) && pattr.children[name]) {
             assert(!pattr.isFile);
             const ino = pattr.children[name];
-            let attr = await readMd(ino);
+            let attr = await this.readMd(ino);
             delete attr.hlinks[pino];
             attr.hlinks[newpino] = newname;
             delete pattr.children[name];
@@ -716,28 +521,28 @@ class AntidoteFS extends FileSystem {
                 log('rename same dir, writing attr', JSON.stringify(attr));
                 await antidote.update(
                     Array.prototype.concat(
-                        mdDeleteChild(pattr, name),
+                        this.mdDeleteChild(pattr, name),
                         // overwriting: delete references to inodes to the same name
-                        mdDeleteChild(pattr, newname),
-                        mdDeleteHlink(attr, pino),
-                        mdUpdate(attr),
-                        mdUpdate(pattr)
+                        this.mdDeleteChild(pattr, newname),
+                        this.mdDeleteHlink(attr, pino),
+                        this.mdUpdate(attr),
+                        this.mdUpdate(pattr)
                     )
                 );
             } else {
                 // move to another directory
-                let pnattr = await readMd(newpino);
+                let pnattr = await this.readMd(newpino);
                 assert(!isEmptyObject(pnattr) && !pnattr.isFile);
                 pnattr.children[newname] = ino;
 
                 await antidote.update(
                     Array.prototype.concat(
-                        mdDeleteChild(pattr, name),
+                        this.mdDeleteChild(pattr, name),
                         // overwriting: delete references to inodes to the same name
-                        mdDeleteChild(pnattr, newname),
-                        mdDeleteHlink(attr, pino),
-                        mdUpdate(attr),
-                        mdUpdate(pnattr)
+                        this.mdDeleteChild(pnattr, newname),
+                        this.mdDeleteHlink(attr, pino),
+                        this.mdUpdate(attr),
+                        this.mdUpdate(pnattr)
                     )
                 );
             }
@@ -775,11 +580,12 @@ class AntidoteFS extends FileSystem {
     }
 
     /**
+     * Open a directory.
      * 
-     * @param {*} context 
-     * @param {*} inode 
-     * @param {*} fileInfo 
-     * @param {*} reply 
+     * @param {Object} context Context info of the calling process.
+     * @param {Number} inode The inode number.
+     * @param {Object} fileInfo File information. 
+     * @param {Object} reply Reply instance.
      */
     async opendir(context, inode, fileInfo, reply) {
         log('OPENDIR: ', inode);
@@ -800,7 +606,7 @@ class AntidoteFS extends FileSystem {
      **/
     async read(context, inode, len, offset, fileInfo, reply) {
         log('READ inode', inode, 'len', len, 'off', offset);
-        let data = await readData(inode);
+        let data = await this.readData(inode);
         if (data) {
             log('read: ', data);
             const content = data.slice(offset,
@@ -814,13 +620,14 @@ class AntidoteFS extends FileSystem {
     }
 
     /**
+     * Read a directory.
      * 
-     * @param {*} context 
-     * @param {*} inode 
-     * @param {*} size 
-     * @param {*} offset 
-     * @param {*} fileInfo 
-     * @param {*} reply 
+     * @param {Object} context Context info of the calling process.
+     * @param {Number} inode The inode number.
+     * @param {Number} size The directory size.
+     * @param {Number} offset The offset.
+     * @param {Object} fileInfo File information.
+     * @param {Object} reply Reply instance.
      */
     async readdir(context, inode, size, offset, fileInfo, reply) {
         log('READDIR inode', inode, 'size', size, 'off', offset);
@@ -828,12 +635,12 @@ class AntidoteFS extends FileSystem {
          * fileInfo will contain the value set by the opendir method, 
          * or will be undefined if the opendir method didn't set any value.
          */
-        let attr = await readMd(inode);
+        let attr = await this.readMd(inode);
         if (!isEmptyObject(attr)) {
             if (Object.keys(attr.children).length > 0) {
                 for (let name in attr.children) {
                     if (attr.children.hasOwnProperty(name)) {
-                        let ch = await readMd(attr.children[name]);
+                        let ch = await this.readMd(attr.children[name]);
                         if (!isEmptyObject(ch)) {
                             log('readdir replying: inode', ch.inode, 'name', name);
                             reply.addDirEntry(name, size, ch, offset);
@@ -855,31 +662,32 @@ class AntidoteFS extends FileSystem {
     }
 
     /**
+     * Write file data.
      * 
-     * @param {*} context 
-     * @param {*} inode 
-     * @param {*} buf 
-     * @param {*} off 
-     * @param {*} fi 
-     * @param {*} reply 
+     * @param {Object} context Context info of the calling process.
+     * @param {Number} inode The inode number.
+     * @param {Object} buf Buffer of data to be written.
+     * @param {Number} offset The offset.
+     * @param {Object} fileInfo File information.
+     * @param {Object} reply Reply instance.
      */
-    async write(context, inode, buf, off, fi, reply) {
-        log('WRITE inode', inode, 'buf.length', buf.length, 'off', off, 'buf', buf);
-        let attr = await readMd(inode);
+    async write(context, inode, buf, offset, fileInfo, reply) {
+        log('WRITE inode', inode, 'buf.length', buf.length, 'off', offset, 'buf', buf);
+        let attr = await this.readMd(inode);
         if (!isEmptyObject(attr)) {
-            let data = await readData(inode);
+            let data = await this.readData(inode);
             if (data != null) {
-                data = data.slice(0, off) + buf +
-                    (off + buf.length >= attr.size ? '' :
-                        data.slice(off + buf.length, attr.size));
+                data = data.slice(0, offset) + buf +
+                    (offset + buf.length >= attr.size ? '' :
+                        data.slice(offset + buf.length, attr.size));
             } else {
                 data = buf;
             }
             attr.size = data.length;
             await antidote.update(
                 Array.prototype.concat(
-                    mdUpdate(attr),
-                    dataUpdate(attr, data),
+                    this.mdUpdate(attr),
+                    this.dataUpdate(attr, data),
                 )
             );
             reply.write(buf.length);
@@ -890,33 +698,8 @@ class AntidoteFS extends FileSystem {
         }
     }
 
-    async flush(context, inode, fi, reply) {
-        log('FLUSH ino', inode);
-        reply.err(0);
-    }
-
-    async fsync(context, ino, datasync, fi, reply) {
-        log('FSYNC ino', ino, 'datasync', datasync);
-        reply.err(0);
-    }
-
-    async fsyncdir(context, inode, datasync, fi, reply) {
-        log('FSYNCDIR inode', inode, 'datasync', datasync);
-        reply.err(0);
-    }
-
-    async release(context, inode, fileInfo, reply) {
-        log('RELEASE inode', inode);
-        reply.err(0);
-    }
-
     async releasedir(context, inode, fileInfo, reply) {
         log('RELEASEDIR: ', inode);
-        reply.err(0);
-    }
-
-    async access(context, inode, mask, reply) {
-        log('ACCESS inode', inode, 'mask', mask);
         reply.err(0);
     }
 
@@ -926,10 +709,12 @@ class AntidoteFS extends FileSystem {
     }
 
     /**
+     * Callback invoked when getting the file system statistics,
+     * for instance when using `df` from command line.
      * 
-     * @param {*} context 
-     * @param {*} inode 
-     * @param {*} reply 
+     * @param {Object} context Context info of the calling process.
+     * @param {Number} inode Inode number.
+     * @param {Object} reply Reply instance.
      */
     async statfs(context, inode, reply) {
         log('STATFS inode', inode);
@@ -946,6 +731,253 @@ class AntidoteFS extends FileSystem {
             fsid: 1000000,
             flag: 0,
         });
+    }
+
+    /**************************************************************
+     * Database and conflict resolution functions
+     **************************************************************/
+
+    /**
+     * Generate a random inode number.
+     * NB: in production, use UUID or include unique per-client or per-site prefix.
+     */
+    getRandomIno() {
+        return Math.floor(Math.random() * (INODE_HIGH - INODE_LOW) + INODE_LOW);
+    }
+
+    /**
+     * Returns the Antidote update operations required to write
+     * file or directory attributes.
+     * 
+     * @param {Object} attr File or directory metadata (attribute) object.
+     */
+    mdUpdate(attr) {
+        let updates = [];
+        const map = antidote.map(`inode_${attr.inode}`);
+        updates.push(map.register('inode').set(attr.inode));
+        updates.push(map.register('mode').set(attr.mode));
+        updates.push(map.register('ctime').set(attr.ctime));
+        updates.push(map.register('mtime').set(attr.mtime));
+        updates.push(map.register('atime').set(attr.atime));
+        updates.push(map.register('rdev').set(attr.rdev));
+        updates.push(map.register('size').set(attr.size));
+        updates.push(map.integer('nlink').set(attr.nlink));
+        updates.push(map.register('uid').set(attr.uid));
+        updates.push(map.register('gid').set(attr.gid));
+        updates.push(map.register('isFile').set(attr.isFile));
+        for (let name in attr.children) {
+            if (attr.children.hasOwnProperty(name)) {
+                // Always write a single inode per child name.
+                assert(!Array.isArray(attr.children[name]));
+                updates.push(map.map('children').set(name).add(attr.children[name]));
+            }
+        }
+        for (let name in attr.hlinks) {
+            if (attr.hlinks.hasOwnProperty(name)) {
+                updates.push(map.map('hlinks').register(name).set(attr.hlinks[name]));
+            }
+        }
+        return updates;
+    }
+
+    /**
+     * Returns the Antidote update operations required to remove 
+     * an inode metadata object.
+     * 
+     * @param {Object} attr File or directory metadata (attribute) object.
+     */
+    mdDelete(attr) {
+        const map = antidote.map(`inode_${attr.inode}`);
+        return map.removeAll([
+            map.register('inode'),
+            map.register('mode'),
+            map.register('ctime'),
+            map.register('mtime'),
+            map.register('atime'),
+            map.register('rdev'),
+            map.register('size'),
+            map.integer('nlink'),
+            map.register('uid'),
+            map.register('gid'),
+            map.register('isFile'),
+            map.map('children'),
+            map.map('hlinks'),
+        ]);
+    }
+
+    /**
+     * Returns the Antidote update operation to remove a child from a
+     * directory metadata object.
+     * 
+     * @param {Object} attr File or directory metadata (attribute) object.
+     * @param {String} name Name of the child to delete.
+     */
+    mdDeleteChild(attr, name) {
+        return antidote.map(`inode_${attr.inode}`).map('children').remove(
+            antidote.set(name));
+    }
+
+    /**
+     * Returns the Antidote update operations to remove a hlink reference
+     * and decrement its count.
+     * 
+     * @param {Object} attr File or directory metadata (attribute) object.
+     * @param {Number} ino Inode number of the parent.
+     */
+    mdDeleteHlink(attr, ino) {
+        return Array.prototype.concat(
+            antidote.map(`inode_${attr.inode}`).map('hlinks').remove(
+                antidote.register(ino.toString())),
+            antidote.map(`inode_${attr.inode}`).integer('nlink').increment(-1)
+        );
+    }
+
+    /**
+     * Returns the Antidote update operation to write a data object.
+     * 
+     * @param {Object} attr File or directory metadata (attribute) object.
+     * @param {Object} data Data to be written.
+     */
+    dataUpdate(attr, data) {
+        return antidote.register(`data_${attr.inode}`).set(new Buffer(data));
+    }
+
+    /**
+     * Read, resolve conflicts and returns the metadata associated
+     * to a certain inode number.
+     * 
+     * @param {Number} inode Inode number.
+     */
+    async readMd(inode) {
+        let md = (await antidote.map(`inode_${inode}`).read()).toJsObject();
+        if (!isEmptyObject(md)) {
+            if (!md.children) {
+                // Because empty maps are not returned by Antidote
+                md.children = {};
+            } else {
+                for (let name in md.children) {
+                    if (md.children.hasOwnProperty(name)) {
+                        //log('reading children: ', name, ': ', md.children[name]);
+                        assert(md.children[name].length != 0);
+                        if (md.children[name].length == 1) {
+                            md.children[name] = md.children[name][0];
+                        } else {
+                            // Merge naming conflicts
+                            log('Merging naming conflicts: ', md);
+                            await mergeNamingConflicts(md, name);
+                        }
+                    }
+                }
+            }
+
+            if (!md.hlinks) md.hlinks = {};
+        }
+        return md;
+    }
+
+    /**
+     * Read and returns the data associated to a certain inode number.
+     * 
+     * @param {Number} inode Inode number.
+     */
+    async readData(inode) {
+        return await antidote.register(`data_${inode}`).read();
+    }
+
+    /**
+     * Merge naming conflicts in a same directory:
+     *  - multiple files with the same name: rename files $file-CONFLICT_$n
+     *  - multiple files and one folder with the same name: rename files as above
+     *  - multiple directories with the same name: merge directories
+     * 
+     * @param {Object} pmd Parent directory attributes object containing conflicts.
+     * @param {String} name The name in parent directory's children having conflicts.
+     */
+    async mergeNamingConflicts(pmd, name) {
+
+        // Get metadata of conflicting inodes
+        let dirs = [], files = [];
+        for (let i = 0; i < pmd.children[name].length; i++) {
+            let childMd = await readMd(pmd.children[name][i]);
+            if (childMd.isFile) files.push(childMd);
+            else dirs.push(childMd);
+        }
+        log('Conflicts - dirs: ', dirs, '- files:', files);
+
+        let updates = [];
+        // If there are several conflicting directories
+        if (dirs.length > 1) {
+            // Merge conflicting directories
+            log('Merging conflicting directories')
+            let mergedDirMd = mergeDirs(dirs);
+            dirs.forEach(function (dir, index, array) {
+                // Remove conflicting inode references
+                let indexChild = pmd.children[name].indexOf(dir.inode);
+                pmd.children[name].splice(indexChild, 1);
+                updates.push(
+                    antidote.map(`inode_${pmd.inode}`).map('children').set(name).remove(dir.inode)
+                );
+                updates = updates.concat(mdDelete(dir));
+            });
+            // Add reference to merged dir
+            pmd.children[name] = mergedDirMd.inode;
+            log('merged dir md:', mergedDirMd);
+            updates.push(
+                antidote.map(`inode_${pmd.inode}`).map('children').set(name).add(mergedDirMd.inode)
+            );
+            updates = updates.concat(mdUpdate(mergedDirMd));
+        }
+
+        // If there are several conflicting files, or just 1 and some directories
+        if (files.length > 1 || (dirs.length + files.length > 1)) {
+            // Rename files in parent's children list
+            log('Renaming conflicting files')
+            files.forEach(function (file, index, array) {
+                const newname = name + '-CONFLICT_' + index;
+                updates.push(
+                    antidote.map(`inode_${pmd.inode}`).map('children').set(name).remove(file.inode),
+                    antidote.map(`inode_${pmd.inode}`).map('children').set(newname).add(file.inode)
+                );
+
+                pmd.children[newname] = file.inode;
+                const indexChild = pmd.children[name].indexOf(file.inode);
+                pmd.children[name].splice(indexChild, 1);
+            });
+
+            if (dirs.length == 0) {
+                // If the conflicting inodes are only files, 
+                // we remove the original child name 
+                // since conflicting files have been renamed
+                updates.push(mdDeleteChild(pmd, name));
+            }
+        }
+
+        // Write merged metadata
+        await antidote.update(updates);
+    }
+
+    /**
+     * Returns a new directory resulting from merging 
+     * the directories given as input.
+     * 
+     * @param {Array} dirs Array of directories attributes to merge.
+     */
+    mergeDirs(dirs) {
+        let mergedDirMd = new AttrDir(getRandomIno(), 2, null);
+
+        let minMode = Number.MAX_SAFE_INTEGER;
+        dirs.forEach(function (dir) {
+            for (let name in dir.children) {
+                if (dir.children.hasOwnProperty(name)) {
+                    // TODO: overwrites conflicting children: recursive merge?
+                    mergedDirMd.addChild(name, dir.children[name]);
+                }
+            }
+            if (dir.mode < minMode) minMode = dir.mode;
+        });
+        mergedDirMd.mode = minMode;
+        // XXX uid, gid?
+        return mergedDirMd;
     }
 }
 
