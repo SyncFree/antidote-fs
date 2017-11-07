@@ -115,20 +115,20 @@ function dataUpdate(attr, data) {
 async function readMd(inode) {
     let md = (await antidote.map(`inode_${inode}`).read()).toJsObject();
     if (!isEmptyObject(md)) {
-        if (!md.children)  {
+        if (!md.children) {
             // Because empty maps are not returned by Antidote
             md.children = {};
         } else {
             for (let name in md.children) {
-                if (md.children.hasOwnProperty(name)) { 
-                    log('reading children: ', name, ': ', md.children[name]);
+                if (md.children.hasOwnProperty(name)) {
+                    //log('reading children: ', name, ': ', md.children[name]);
                     assert(md.children[name].length != 0);
                     if (md.children[name].length == 1) {
                         md.children[name] = md.children[name][0];
                     } else {
-                        // TODO: Merge children
+                        // Merge naming conflicts
                         log('Merging naming conflicts: ', md);
-                        mergeNamingConflicts(md, name);
+                        await mergeNamingConflicts(md, name);
                     }
                 }
             }
@@ -144,82 +144,95 @@ async function readData(inode) {
 }
 
 /**
- * Merge naming conflicts:
- *  - file/file: rename files
- *  - file/dir: rename file
- *  - dir/dir: merge dirs
+ * Merge naming conflicts in a same directory:
+ *  - multiple files with the same name: rename files $file-CONFLICT_$n
+ *  - multiple files and one folder with the same name: rename files as above
+ *  - multiple directories with the same name: merge directories
+ * 
+ * @param {Object} pmd Parent directory attributes object containing conflicts.
+ * @param {String} name The name in parent directory's children having conflicts.
  */
 async function mergeNamingConflicts(pmd, name) {
-    let dirs = [];
-    let files = [];
 
-    let updates = [];
-
+    // Get metadata of conflicting inodes
+    let dirs = [], files = [];
     for (let i = 0; i < pmd.children[name].length; i++) {
         let childMd = await readMd(pmd.children[name][i]);
-        if (childMd.isFile) {
-            files.push(childMd);
-        } else {
-            dirs.push(childMd);
-        }
+        if (childMd.isFile) files.push(childMd);
+        else dirs.push(childMd);
     }
     log('Conflicts - dirs: ', dirs, '- files:', files);
 
-    if (files.length > 1 || (dirs.length + files.length > 1)) {
-        // rename files in parent metadata
-        log('merging files')
-        files.forEach(function(file, index, array) {
-            let newname = name + '-CONFLICT_' + index;
-            pmd.children[newname] = file.inode;
-            let indexChild = pmd.children[name].indexOf(file.inode);
-            pmd.children[name].splice(indexChild, 1);
-            updates.push(
-                antidote.map(`inode_${pmd.inode}`).map('children').set(name).remove(file.inode)
-            );
-            updates.push(
-                antidote.map(`inode_${pmd.inode}`).map('children').set(newname).add(file.inode)
-            );
-        });
-    }
-
+    let updates = [];
+    // If there are several conflicting directories
     if (dirs.length > 1) {
-        log('merging dirs')
+        // Merge conflicting directories
+        log('Merging conflicting directories')
         let mergedDirMd = mergeDirs(dirs);
-        dirs.forEach(function(dir, index, array) {
+        dirs.forEach(function (dir, index, array) {
+            // Remove conflicting inode references
             let indexChild = pmd.children[name].indexOf(dir.inode);
             pmd.children[name].splice(indexChild, 1);
             updates.push(
                 antidote.map(`inode_${pmd.inode}`).map('children').set(name).remove(dir.inode)
             );
+            updates = updates.concat(mdDelete(dir));
         });
+        // Add reference to merged dir
         pmd.children[name] = mergedDirMd.inode;
-        updates.concat(mdUpdate(mergedDirMd));
-        // XXX remove md of merged directories ?
-    } else {
-        // If the conflicting inodes are only files, we can remove the original child
-        // as conflicting files have different names;
-        updates.push(mdDeleteChild(pmd, name));
+        log('merged dir md:', mergedDirMd);
+        updates.push(
+            antidote.map(`inode_${pmd.inode}`).map('children').set(name).add(mergedDirMd.inode)
+        );
+        updates = updates.concat(mdUpdate(mergedDirMd));
     }
 
-    // Write back merged parent metadata and
-    // (possibly) the new merged dir metadata.
+    // If there are several conflicting files, or just 1 and some directories
+    if (files.length > 1 || (dirs.length + files.length > 1)) {
+        // Rename files in parent's children list
+        log('Renaming conflicting files')
+        files.forEach(function (file, index, array) {
+            const newname = name + '-CONFLICT_' + index;
+            updates.push(
+                antidote.map(`inode_${pmd.inode}`).map('children').set(name).remove(file.inode),
+                antidote.map(`inode_${pmd.inode}`).map('children').set(newname).add(file.inode)
+            );
+
+            pmd.children[newname] = file.inode;
+            const indexChild = pmd.children[name].indexOf(file.inode);
+            pmd.children[name].splice(indexChild, 1);
+        });
+
+        if (dirs.length == 0) {
+            // If the conflicting inodes are only files, 
+            // we remove the original child name 
+            // since conflicting files have been renamed
+            updates.push(mdDeleteChild(pmd, name));
+        }
+    }
+
+    // Write merged metadata
     await antidote.update(updates);
 }
 
+/**
+ * Returns a new directory resulting from merging 
+ * the directories given as input.
+ * 
+ * @param {Array} dirs Array of directories attributes to merge.
+ */
 function mergeDirs(dirs) {
-    let mergedDirMd =  new AttrDir(getRandomIno(), 2, null);
+    let mergedDirMd = new AttrDir(getRandomIno(), 2, null);
 
     let minMode = Number.MAX_SAFE_INTEGER;
-    dirs.forEach(function(dir) {
+    dirs.forEach(function (dir) {
         for (let name in dir.children) {
             if (dir.children.hasOwnProperty(name)) {
-                // XXX can generate conflict: recursive merge?
+                // TODO: overwrites conflicting children: recursive merge?
                 mergedDirMd.addChild(name, dir.children[name]);
             }
         }
-        if (dir.mode < minMode) {
-            minMode = dir.mode;
-        }
+        if (dir.mode < minMode) minMode = dir.mode;
     });
     mergedDirMd.mode = minMode;
     // XXX uid, gid?
