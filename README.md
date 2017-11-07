@@ -13,8 +13,7 @@ by means of its node.js bindings.
 Requirements: [node.js 8][nodejs], [npm][npm], [Antidote][antidote-setup], 
 [Fuse 2.9][fuse].  
 To compile it: `npm install`.  
-To run it: `node src/antidote-fs.js <mountpoint>`.  
-(It currently assumes that an Antidote instance is reachable at `localhost:8087`).
+To run it: `node src/antidote-fs.js -m <mount_dir> -a <antidote_address:port>`.  
 
 
 ## Credits

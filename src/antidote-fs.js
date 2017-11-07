@@ -990,10 +990,14 @@ function mkTmpDir() {
     return dir;
 }
 
-const mountPoint = process.argv.length > 2 ?
-    process.argv.slice(2, process.argv.length) : mkTmpDir();
-let antidote = antidoteClient.connect(8087, 'localhost');
+var argv = require('minimist')(process.argv.slice(2));
 
+const mountPoint = argv.m ?
+    argv.m : mkTmpDir();
+const antidoteAddress = argv.a ?
+    argv.a.split(':') : 'localhost:8087'.split(':');
+
+let antidote = antidoteClient.connect(antidoteAddress[1], antidoteAddress[0]);
 fuse.mount({
     filesystem: AntidoteFS,
     options: ['AntidoteFS', mountPoint],
