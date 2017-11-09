@@ -263,7 +263,7 @@ class AntidoteFS extends FileSystem {
     }
 
     /**
-     * Remove a file.
+     * Remove a (hard link of a) file.
      *
      * @param {Object} context Context info of the calling process.
      * @param {Number} pino Inode number of the parent directory.
@@ -686,6 +686,10 @@ class AntidoteFS extends FileSystem {
             attr.size = data.length;
             await antidote.update(
                 Array.prototype.concat(
+                    /* TODO: add back on every parent inode children map
+                     * this inode so that in case of concurrent delete, 
+                     * the add will prevail.
+                     */
                     this.mdUpdate(attr),
                     this.dataUpdate(attr, data),
                 )
