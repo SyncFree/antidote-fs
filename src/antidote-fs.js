@@ -522,7 +522,7 @@ class AntidoteFS extends FileSystem {
                 await antidote.update(
                     Array.prototype.concat(
                         this.mdDeleteChild(pattr, name),
-                        // overwriting: delete references to inodes to the same name
+                        // overwriting: delete references to inodes of the same name
                         this.mdDeleteChild(pattr, newname),
                         this.mdDeleteHlink(attr, pino),
                         this.mdUpdate(attr),
@@ -538,7 +538,7 @@ class AntidoteFS extends FileSystem {
                 await antidote.update(
                     Array.prototype.concat(
                         this.mdDeleteChild(pattr, name),
-                        // overwriting: delete references to inodes to the same name
+                        // overwriting: delete references to inodes of the same name
                         this.mdDeleteChild(pnattr, newname),
                         this.mdDeleteHlink(attr, pino),
                         this.mdUpdate(attr),
@@ -757,7 +757,7 @@ class AntidoteFS extends FileSystem {
      */
     mdUpdate(attr) {
         let updates = [];
-        const map = antidote.map(`inode_${attr.inode}`);
+        const map = antidote.rrmap(`inode_${attr.inode}`);
         updates.push(map.register('inode').set(attr.inode));
         updates.push(map.register('mode').set(attr.mode));
         updates.push(map.register('ctime').set(attr.ctime));
@@ -765,7 +765,7 @@ class AntidoteFS extends FileSystem {
         updates.push(map.register('atime').set(attr.atime));
         updates.push(map.register('rdev').set(attr.rdev));
         updates.push(map.register('size').set(attr.size));
-        updates.push(map.integer('nlink').set(attr.nlink));
+        updates.push(map.register('nlink').set(attr.nlink));
         updates.push(map.register('uid').set(attr.uid));
         updates.push(map.register('gid').set(attr.gid));
         updates.push(map.register('isFile').set(attr.isFile));
@@ -773,12 +773,12 @@ class AntidoteFS extends FileSystem {
             if (attr.children.hasOwnProperty(name)) {
                 // Always write a single inode per child name.
                 assert(!Array.isArray(attr.children[name]));
-                updates.push(map.map('children').set(name).add(attr.children[name]));
+                updates.push(map.rrmap('children').set(name).add(attr.children[name]));
             }
         }
         for (let name in attr.hlinks) {
             if (attr.hlinks.hasOwnProperty(name)) {
-                updates.push(map.map('hlinks').register(name).set(attr.hlinks[name]));
+                updates.push(map.rrmap('hlinks').register(name).set(attr.hlinks[name]));
             }
         }
         return updates;
@@ -791,7 +791,7 @@ class AntidoteFS extends FileSystem {
      * @param {Object} attr File or directory metadata (attribute) object.
      */
     mdDelete(attr) {
-        const map = antidote.map(`inode_${attr.inode}`);
+        const map = antidote.rrmap(`inode_${attr.inode}`);
         return map.removeAll([
             map.register('inode'),
             map.register('mode'),
@@ -800,12 +800,12 @@ class AntidoteFS extends FileSystem {
             map.register('atime'),
             map.register('rdev'),
             map.register('size'),
-            map.integer('nlink'),
+            map.register('nlink'),
             map.register('uid'),
             map.register('gid'),
             map.register('isFile'),
-            map.map('children'),
-            map.map('hlinks'),
+            map.rrmap('children'),
+            map.rrmap('hlinks'),
         ]);
     }
 
@@ -817,7 +817,7 @@ class AntidoteFS extends FileSystem {
      * @param {String} name Name of the child to delete.
      */
     mdDeleteChild(attr, name) {
-        return antidote.map(`inode_${attr.inode}`).map('children').remove(
+        return antidote.rrmap(`inode_${attr.inode}`).rrmap('children').remove(
             antidote.set(name));
     }
 
@@ -830,9 +830,9 @@ class AntidoteFS extends FileSystem {
      */
     mdDeleteHlink(attr, ino) {
         return Array.prototype.concat(
-            antidote.map(`inode_${attr.inode}`).map('hlinks').remove(
+            antidote.rrmap(`inode_${attr.inode}`).rrmap('hlinks').remove(
                 antidote.register(ino.toString())),
-            antidote.map(`inode_${attr.inode}`).integer('nlink').increment(-1)
+            antidote.rrmap(`inode_${attr.inode}`).register('nlink').set(attr.nlink)
         );
     }
 
@@ -853,7 +853,7 @@ class AntidoteFS extends FileSystem {
      * @param {Number} inode Inode number.
      */
     async readMd(inode) {
-        let md = (await antidote.map(`inode_${inode}`).read()).toJsObject();
+        let md = (await antidote.rrmap(`inode_${inode}`).read()).toJsObject();
         if (!isEmptyObject(md)) {
             if (!md.children) {
                 // Because empty maps are not returned by Antidote
@@ -919,7 +919,7 @@ class AntidoteFS extends FileSystem {
                 let indexChild = pmd.children[name].indexOf(dir.inode);
                 pmd.children[name].splice(indexChild, 1);
                 updates.push(
-                    antidote.map(`inode_${pmd.inode}`).map('children').set(name).remove(dir.inode)
+                    antidote.rrmap(`inode_${pmd.inode}`).rrmap('children').set(name).remove(dir.inode)
                 );
                 updates = updates.concat(this.mdDelete(dir));
             }, this);
@@ -927,7 +927,7 @@ class AntidoteFS extends FileSystem {
             pmd.children[name] = mergedDirMd.inode;
             log('merged dir md:', mergedDirMd);
             updates.push(
-                antidote.map(`inode_${pmd.inode}`).map('children').set(name).add(mergedDirMd.inode)
+                antidote.rrmap(`inode_${pmd.inode}`).rrmap('children').set(name).add(mergedDirMd.inode)
             );
             updates = updates.concat(this.mdUpdate(mergedDirMd));
         }
@@ -939,8 +939,8 @@ class AntidoteFS extends FileSystem {
             files.forEach(function (file, index, array) {
                 const newname = name + '-CONFLICT_' + index;
                 updates.push(
-                    antidote.map(`inode_${pmd.inode}`).map('children').set(name).remove(file.inode),
-                    antidote.map(`inode_${pmd.inode}`).map('children').set(newname).add(file.inode)
+                    antidote.rrmap(`inode_${pmd.inode}`).rrmap('children').set(name).remove(file.inode),
+                    antidote.rrmap(`inode_${pmd.inode}`).rrmap('children').set(newname).add(file.inode)
                 );
 
                 pmd.children[newname] = file.inode;
