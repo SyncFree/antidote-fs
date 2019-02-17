@@ -7,7 +7,7 @@ echo "Start distributed file system test"
 
 docker-compose -f ./test/docker-antidote-3dcs.yml down >/dev/null 2>&1
 docker-compose -f ./test/docker-antidote-3dcs.yml up -d #>/dev/null 2>&1
-sleep 15
+sleep 25
 
 rm -rf d1 d2 d3
 mkdir -p d1 d2 d3
