@@ -5,7 +5,8 @@ A [FUSE][fuse-wiki] file system backed by [Antidote][antidote].
 In the [_fuse-hl](_fuse-hl/) folder is an early implementation using 
 the [FUSE synchronous high-level API][fuse-hl].  
 Instead, this implementation uses the [FUSE asynchronous low-level API][fuse-ll]
-by means of its node.js bindings.
+by means of its node.js bindings.  
+More details on the design are available in the `doc` folder.
 
 
 ## Getting started
