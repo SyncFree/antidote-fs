@@ -3,9 +3,11 @@
 
 . ./test/utils.sh
 
+echo "Start distributed file system test"
+
 docker-compose -f ./test/docker-antidote-3dcs.yml down >/dev/null 2>&1
-docker-compose -f ./test/docker-antidote-3dcs.yml up -d >/dev/null 2>&1
-sleep 8
+docker-compose -f ./test/docker-antidote-3dcs.yml up -d #>/dev/null 2>&1
+sleep 15
 
 rm -rf d1 d2 d3
 mkdir -p d1 d2 d3
@@ -46,9 +48,11 @@ then ok;
 else ko; EXIT=1;
 fi
 
-fusermount -u d1; fusermount -u d2; fusermount -u d3
+fusermount -u d1 >/dev/null 2>&1; while [ $? -ne 0 ]; do fusermount -u d1 >/dev/null 2>&1; done
+fusermount -u d2 >/dev/null 2>&1; while [ $? -ne 0 ]; do fusermount -u d2 >/dev/null 2>&1; done
+fusermount -u d3 >/dev/null 2>&1; while [ $? -ne 0 ]; do fusermount -u d3 >/dev/null 2>&1; done
+docker-compose -f ./test/docker-antidote-3dcs.yml down #>/dev/null 2>&1
 killall node >/dev/null 2>&1 # !!
-docker-compose -f ./test/docker-antidote-3dcs.yml down >/dev/null 2>&1
 rm -rf d1 d2 d3
 
 exit $EXIT

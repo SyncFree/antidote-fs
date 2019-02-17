@@ -7,6 +7,8 @@ set -e
 
 . ./test/utils.sh
 
+echo "Start file system basic test"
+
 pushd $ROOT
 
 FILE="file_$(rnd_str)"
