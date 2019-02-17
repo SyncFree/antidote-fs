@@ -5,7 +5,7 @@
     "main": "antidote-fs.js",
     "scripts": {
         "start": "node src/main.js",
-        "lint": "eslint --config .eslintrc.json --format compact ./src/",
+        "lint": "./node_modules/.bin/eslint --config .eslintrc.json --format compact ./src/ --fix",
         "test": "./test/test.sh"
     },
     "repository": {
@@ -22,19 +22,15 @@
     "readmeFilename": "README.md",
     "dependencies": {
         "antidote_ts_client": "^0.1.7",
-        "fusejs": "pviotti/fusejs",
+        "fusejs": "github:pviotti/fusejs#v1.4.4",
         "minimist": "^1.2.0"
     },
     "devDependencies": {
-        "chai": "^4.1.2",
-        "eslint": "^4.9.0",
-        "eslint-config-google": "^0.9.1",
-        "eslint-config-standard": "^10.2.1",
-        "eslint-plugin-import": "^2.8.0",
-        "eslint-plugin-node": "^5.2.0",
-        "eslint-plugin-promise": "^3.6.0",
-        "eslint-plugin-standard": "^3.0.1",
-        "mocha": "^4.0.1",
-        "sinon": "^4.0.1"
+        "eslint": "^5.14.0",
+        "eslint-config-standard": "^12.0.0",
+        "eslint-plugin-import": "^2.16.0",
+        "eslint-plugin-node": "^8.0.1",
+        "eslint-plugin-promise": "^4.0.1",
+        "eslint-plugin-standard": "^4.0.0"
     }
 }
