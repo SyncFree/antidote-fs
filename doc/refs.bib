@@ -1,0 +1,1659 @@
+% -*- mode: BibTex; coding: iso-safe -*-
+
+
+@inproceedings{fs-mahsa,
+	author = {Najafzadeh, Mahsa and Shapiro, Marc},
+	title = {Co-design and verification of an available file system},
+	booktitle = {under submission},
+	year = {2017}
+} 
+
+@inproceedings{Tao.ea:15,
+	author    = {Vinh Tao and
+	Marc Shapiro and
+	Vianney Rancurel},
+	title     = {Merging semantics for conflict updates in geo-distributed file systems},
+	booktitle = {{ACM} International Systems and Storage Conference,
+	{SYSTOR}},
+	year      = {2015},
+	url       = {http://doi.acm.org/10.1145/2757667.2757683}
+}
+
+@techreport{martin:hal-00648106,
+	TITLE = {{Abstract unordered and ordered trees CRDT}},
+	AUTHOR = {Martin, St{\'e}phane and Ahmed-Nacer, Mehdi and Urso, Pascal},
+	URL = {https://hal.inria.fr/hal-00648106},
+	TYPE = {Research Report},
+	NUMBER = {RR-7825},
+	PAGES = {23},
+	INSTITUTION = {{INRIA}},
+	YEAR = {2011},
+	MONTH = Dec,
+	KEYWORDS = {Distributed System ; Eventual Consistency ; CRDT ; Optimistic Replication ; Data Consistency ; Tree},
+	PDF = {https://hal.inria.fr/hal-00648106/file/RR-7825.pdf},
+	HAL_ID = {hal-00648106},
+	HAL_VERSION = {v2},
+}
+
+@InProceedings{rep:sh175,
+	author =       {Valter Balegas and Diogo Serra and S{\'e}rgio Duarte
+	and Carla
+	Ferreira and Marc Shapiro and Rodrigo Rodrigues
+	and Nuno Pregui{\c c}a},
+	title =        {Extending Eventually Consistent Cloud Databases for
+	Enforcing Numeric Invariants}, 
+	booktitle =    srds,
+	year =         2015,
+	pages =        {31--36},
+	month =        sep,
+	address =      {Montr{\'e}al, Canada},
+	organization = ieeecs,
+	publisher =    ieeecs,
+	comment =      {Short paper},
+	local-url =    {papers/numeric-invariants-SRDS-2015.pdf},
+	pdf =          {http://lip6.fr/Marc.Shapiro/papers/numeric-invariants-SRDS-2015.pdf},
+	doi =          {10.1109/SRDS.2015.32},
+	url =          {http://dx.doi.org/10.1109/SRDS.2015.32},
+	hal =          {https://hal.inria.fr/hal-01248192},
+	x-conferencestartdate = {2015},
+	x-audience  =  intl,
+	x-language  =  en,
+	x-invitedcommunication = no,
+	x-peerreviewing = yes,
+	x-popularlevel = no,
+	x-proceedings  = yes,
+	repository   = {https://projectos.fct.unl.pt/svn/di-di95/papers/SRDS15},
+}
+
+@InProceedings{rep:pro:sh182,
+	author =	 {Akkoorath, Deepthi Devaki and Alejandro Z. Tomsic and
+	Manuel Bravo and Zhongmiao Li and Tyler Crain and
+	Annette Bieniusa and Nuno Pregui{\c c}a and Marc Shapiro},
+	title =	 {{C}ure: Strong semantics meets high availability and
+	low latency},
+	booktitle =	 icdcs,
+	year =	 2016,
+	pages =	 {405--414},
+	month =	 jun,
+	address =	 {Nara, Japan},
+	local-url =	 {./papers/Cure-final-ICDCS16.pdf},
+	doi =		 {10.1109/ICDCS.2016.98},
+	url =          {http://doi.ieeecomputersociety.org/10.1109/ICDCS.2016.98},
+	hal =		 {https://hal.inria.fr/hal-01350558},
+	pdf =		 {http://lip6.fr/Marc.Shapiro/papers/Cure-final-ICDCS16.pdf},
+	x-audience =	 yes,
+	x-europeanproject =syncfree,
+	x-filesource = author,
+	x-invitedcommunication =no,
+	x-language =	 en,
+	x-peerreviewing =yes,
+	x-popularlevel =no,
+	x-repository =  {svn+ssh://scm.gforge.inria.fr/svnroot/syncfree/trunk/papers/wp2-doc/antidote_paper/paper.tex},
+	abstract =      {Developers of cloud-scale applications
+	face a difficult decision of which kind of storage to
+	use, summarised by the CAP theorem. Currently the
+	choice is between classical CP databases, which
+	provide strong guarantees but are slow, expensive, and
+	unavailable under partition; and NoSQL-style AP
+	databases, which are fast and available, but too hard
+	to program against. We present an alternative: Cure
+	provides the highest level of guarantees that remains
+	compatible with availability. These guarantees
+	include: causal consistency (no ordering anomalies),
+	atomicity (consistent multi-key updates), and support
+	for high-level data types (developer friendly API)
+	with safe resolution of concurrent updates
+	(guaranteeing convergence). These guarantees minimise
+	the anomalies caused by parallelism and distribution,
+	thus facilitating the development of
+	applications. This paper presents the protocols for
+	highly available transactions, and an experimental
+	evaluation showing that Cure is able to achieve
+	scalability similar to eventually- consistent NoSQL
+	databases, while providing stronger guarantees.},
+}
+
+@misc{posix,
+	Title = {{POSIX.1-2008, IEEE 1003.1-2008, 2016 Edition, The Open Group Base Specifications Issue 7}},
+	howpublished = "\url{http://pubs.opengroup.org/onlinepubs/9699919799.2016edition/}",
+	Year = 2016,
+	Bdsk-Url-1 = {http://pubs.opengroup.org/onlinepubs/9699919799.2016edition/}}
+
+@misc{uuid,
+	Title = {{IETF RFC 4122: A Universally Unique IDentifier (UUID) URN Namespace}},
+	howpublished = "\url{https://tools.ietf.org/html/rfc4122}",
+	Year = 2005,
+	Bdsk-Url-1 = {https://tools.ietf.org/html/rfc4122}}
+
+@misc{antidotefs-nesting,
+	Title = {{AntidoteFS prototype - nesting version}},
+	howpublished = "\url{https://github.com/SyncFree/antidote-fs/tree/v0.9-nesting}",
+	Year = 2017,
+	Bdsk-Url-1 = {https://github.com/SyncFree/antidote-fs/tree/v0.9-nesting}}
+
+@misc{antidotefs,
+	Title = {{AntidoteFS prototype}},
+	howpublished = "\url{https://github.com/SyncFree/antidote-fs}",
+	Year = 2017,
+	Bdsk-Url-1 = {https://github.com/SyncFree/antidote-fs}}
+
+@misc{antidote-web,
+	Title = {{AntidoteDB}},
+	howpublished = "\url{http://syncfree.github.io/antidote/}",
+	Year = 2013,
+	Bdsk-Url-1 = {http://syncfree.github.io/antidote/}}
+
+@misc{antidote-nesting,
+	Title = {{Embed nesting information in Keys - GitHub Issue}},
+	howpublished = "\url{https://github.com/SyncFree/antidote-java-client/issues/3}",
+	Year = 2015,
+	Bdsk-Url-1 = {https://github.com/SyncFree/antidote-java-client/issues/3}}
+
+@misc{antidote-md,
+	Title = {{Mechanism for associating metadata attributes to objects - GitHub Issue}},
+	howpublished = "\url{https://github.com/SyncFree/antidote/issues/314}",
+	Year = 2017,
+	Bdsk-Url-1 = {https://github.com/SyncFree/antidote/issues/314}}
+
+@inproceedings{clocksi,
+ author = {Du, Jiaqing and Elnikety, Sameh and Zwaenepoel, Willy},
+ title = {Clock-SI: Snapshot Isolation for Partitioned Data Stores Using Loosely Synchronized Clocks},
+ booktitle = {Proceedings of the 2013 IEEE 32Nd International Symposium on Reliable Distributed Systems},
+ series = {SRDS '13},
+ year = {2013},
+ isbn = {978-0-7695-5115-9},
+ pages = {173--184},
+ numpages = {12},
+ keywords = {snapshot isolation, distributed transactions, partitioned data, loosely synchronized clocks},
+} 
+
+@inproceedings{swiftcloud,
+ author = {Zawirski, Marek and Pregui\c{c}a, Nuno and Duarte, S{\'e}rgio and Bieniusa, Annette and Balegas, Valter and Shapiro, Marc},
+ title = {Write Fast, Read in the Past: Causal Consistency for Client-Side Applications},
+ booktitle = {Proceedings of the 16th Annual Middleware Conference},
+ series = {Middleware '15},
+ year = {2015},
+ isbn = {978-1-4503-3618-5},
+ location = {Vancouver, BC, Canada},
+ pages = {75--87},
+ numpages = {13},
+}
+@misc{ntp,
+	Title = {The network time protocol},
+	howpublished = "\url{http://www.ntp.org}",
+	Year = 2015,
+}
+
+@misc{antidote,
+	Title = {Antidote Reference Platform},
+	howpublished = "\url{http://github.com/SyncFree/antidote}",
+	Year = 2015,
+	Bdsk-Url-1 = {http://github.com/SyncFree/antidote}}
+
+@misc{zmq,
+	Title = {ZeroMQ},
+	howpublished = "\url{http://http://zeromq.org/}",
+	Year = 2015,
+	Bdsk-Url-1 = {http://http://zeromq.org/}}
+
+@misc{basho_bench,
+	Title = {Basho Bench},
+	howpublished = "\url{http://github.com/SyncFree/basho\_bench}",
+	Year = 2015,
+	Bdsk-Url-1 = {http://github.com/SyncFree/basho_bench}}
+
+
+@misc{hbase,
+	Date-Added = {2015-05-12 14:58:40 +0000},
+	Date-Modified = {2015-05-12 15:01:44 +0000},
+	Title = {HBase},
+	howpublished = {http://hbase.apache.org},
+	Year = {2012}}
+
+@inproceedings{closingGap,
+	Affiliation = {EPFL},
+	Author = {Du, Jiaqing and Iorgulescu, Calin and Roy, Amitabha and Zwaenepoel, Willy},
+	Booktitle = {1{s}t {W}orkshop on {P}rinciples and {P}ractice of {E}ventual {C}onsistency ({P}a{PEC} 2014)},
+	Date-Added = {2015-05-12 12:36:01 +0000},
+	Date-Modified = {2015-05-12 12:36:17 +0000},
+	Details = {http://infoscience.epfl.ch/record/198281},
+	Documenturl = {http://infoscience.epfl.ch/record/198281/files/PaPEC_2014.pdf},
+	Location = {Amsterdam, The Netherlands},
+	Oai-Id = {oai:infoscience.epfl.ch:198281},
+	Oai-Set = {conf},
+	Review = {REVIEWED},
+	Status = {PUBLISHED},
+	Submitter = {183972; 183972; 183972},
+	Title = {Closing {T}he {P}erformance {G}ap between {C}ausal {C}onsistency and {E}ventual {C}onsistency},
+	Unit = {LABOS},
+	Year = 2014}
+
+@inproceedings{ale,
+	Abstract = {Failure detection plays a central role in the engineering of distributed
+systems. Furthermore, many applications have timing constraints and require
+failure detectors that provide quality of service (QoS) with some
+quantitative timeliness guarantees. Therefore, they need failure detectors
+that are fast and accurate. We introduce the Two-Windows Failure Detector
+(2W-FD), an algorithm able to react to sudden changes in network
+conditions, property that currently existing algorithms do not satisfy. We
+ran tests on real traces and compared the 2W-FD to state-of-art algorithms.
+Our results show that our algorithm presents the best performance in terms
+of speed and accuracy in unstable scenarios.},
+	Address = {Hyderabad, India},
+	Author = {Alejandro Tomsic and Pierre Sens and Jo{\~a}o Garcia and Luciana Arantes and Julien Sopena},
+	Booktitle = {29th IEEE International Parallel \& Distributed Processing Symposium (IEEE IPDPS 2015)},
+	Date-Added = {2015-02-20 15:34:54 +0000},
+	Date-Modified = {2015-02-20 15:34:58 +0000},
+	Days = 25,
+	Keywords = {Cloud computing;Communication protocols;Dependable;computing practice;Dependable computing theory;Fault tolerance;Performance and measurement},
+	Month = may,
+	Title = {{2W-FD:} A Failure Detector Algorithm with {QoS}},
+	Year = 2015}
+
+@misc{grid5000,
+	Author = {{Grid'5000}},
+	Date-Added = {2015-02-18 08:35:10 +0000},
+	Date-Modified = {2015-02-18 08:35:10 +0000},
+	Howpublished = {\url{https://www.grid5000.fr/}},
+	Month = {retrieved April},
+	Title = {Grid'5000, A Scientific Instrument [\ldots]},
+	Year = 2013}
+
+@inproceedings{g-dur,
+	Acmid = {2663336},
+	Address = {New York, NY, USA},
+	Author = {Ardekani, Masoud Saeida and Sutra, Pierre and Shapiro, Marc},
+	Booktitle = {Proceedings of the 15th International Middleware Conference},
+	Date-Added = {2015-02-16 16:21:10 +0000},
+	Date-Modified = {2015-02-16 16:21:16 +0000},
+	Doi = {10.1145/2663165.2663336},
+	Isbn = {978-1-4503-2785-5},
+	Keywords = {consistency criterion, deferred update replication, distributed data store, distributed transaction},
+	Location = {Bordeaux, France},
+	Numpages = {12},
+	Pages = {13--24},
+	Publisher = {ACM},
+	Series = {Middleware '14},
+	Title = {G-DUR: A Middleware for Assembling, Analyzing, and Improving Transactional Protocols},
+	Url = {http://doi.acm.org/10.1145/2663165.2663336},
+	Year = {2014},
+	Bdsk-Url-1 = {http://doi.acm.org/10.1145/2663165.2663336},
+	Bdsk-Url-2 = {http://dx.doi.org/10.1145/2663165.2663336}}
+
+@article{timeclocks,
+	Author = {Lamport, Leslie},
+	Date-Added = {2015-02-16 16:06:18 +0000},
+	Date-Modified = {2015-02-16 16:06:32 +0000},
+	Group = {wdoc},
+	Journal = cacm,
+	Keywords = {con,rep},
+	Local-Url = {~/Contrib/wdoc/http___doi.acm.org_10.1145_359545.359563.pdf},
+	Month = jul,
+	Number = 7,
+	Pages = {558--565},
+	Title = {Time, Clocks, and the Ordering of Events in a Distributed System},
+	Url = {http://doi.acm.org/10.1145/359545.359563},
+	Volume = 21,
+	Year = 1978,
+	Bdsk-Url-1 = {http://doi.acm.org/10.1145/359545.359563}}
+
+@inproceedings{causal-memory,
+	Address = {Delphi, Greece},
+	Author = {Ahamad, Mustaque and Burns, James E. and Hutto, Phillip W. and Neiger, Gil},
+	Booktitle = {Proc.\ 5th Int.\ Workshop on Distributed Algorithms},
+	Date-Added = {2015-02-16 15:12:22 +0000},
+	Date-Modified = {2015-02-16 15:12:48 +0000},
+	Keywords = {syn,mat},
+	Month = oct,
+	Pages = {9--30},
+	Title = {Causal Memory},
+	Year = 1991}
+
+@article{cap,
+	Address = {New York, NY, USA},
+	Author = {Seth Gilbert and Nancy Lynch},
+	Comment = {CAP theorem proved},
+	Date-Added = {2015-02-16 15:10:16 +0000},
+	Date-Modified = {2015-02-16 15:10:20 +0000},
+	Doi = {http://doi.acm.org/10.1145/564585.564601},
+	Issn = {0163-5700},
+	Journal = {SIGACT News},
+	Local-Url = {~/Contrib/replication+consistency/Brewer_s_CAP_conjecture_feasibility-SIGACT-2002-06.pdf},
+	Number = 2,
+	Pages = {51--59},
+	Publisher = {ACM},
+	Title = {Brewer's conjecture and the feasibility of consistent, available, partition-tolerant web services},
+	Volume = 33,
+	Year = 2002,
+	Bdsk-Url-1 = {http://doi.acm.org/10.1145/564585.564601}}
+
+@article{lazyReplication,
+	Author = {Ladin, Rivka and Liskov, Barbara and Shrira, Liuba and Ghemawat, Sanjay},
+	Date-Added = {2015-02-16 14:42:30 +0000},
+	Date-Modified = {2015-02-16 14:42:46 +0000},
+	Journal = tocs,
+	Keywords = {pan,rep},
+	Local-Url = {~/Contrib/replication+consistency/Providing high availability using lazy replication_TOCS-1992_p360-ladin.pdf},
+	Month = nov,
+	Number = 4,
+	Pages = {360--391},
+	Title = {Providing High Availability Using Lazy Replication},
+	Url = {http://dx.doi.org/10.1145/138873.138877},
+	Volume = 10,
+	Year = 1992,
+	Bdsk-Url-1 = {http://dx.doi.org/10.1145/138873.138877}}
+
+@article{eventually-consistent,
+	Acmid = {1435432},
+	Address = {New York, NY, USA},
+	Author = {Vogels, Werner},
+	Date-Added = {2015-02-16 11:28:13 +0000},
+	Date-Modified = {2015-02-16 11:28:19 +0000},
+	Doi = {10.1145/1435417.1435432},
+	Issn = {0001-0782},
+	Issue_Date = {January 2009},
+	Journal = {Commun. ACM},
+	Month = jan,
+	Number = {1},
+	Numpages = {5},
+	Pages = {40--44},
+	Publisher = {ACM},
+	Title = {Eventually Consistent},
+	Url = {http://doi.acm.org/10.1145/1435417.1435432},
+	Volume = {52},
+	Year = {2009},
+	Bdsk-Url-1 = {http://doi.acm.org/10.1145/1435417.1435432},
+	Bdsk-Url-2 = {http://dx.doi.org/10.1145/1435417.1435432}}
+
+@techreport{conavcon,
+	Address = {Austin, TX, USA},
+	Author = {Mahajan, Prince and Alvisi, Lorenzo and Dahlin, Mike},
+	Comment = {CAC = Strongest consistency in an EC system is causal consistency},
+	Date-Added = {2015-02-16 11:04:29 +0000},
+	Date-Modified = {2015-02-16 11:04:48 +0000},
+	Institution = {Dept.\ of Comp.\ Sc., The U.\ of Texas at Austin},
+	Local-Url = {~/Contrib/replication+consistency/Consistency, Availability, and Convergence_Mahajan+Alvisi-TR.pdf},
+	Number = {UTCS TR-11-22},
+	Title = {Consistency, Availability, and Convergence},
+	Year = 2011}
+
+@inproceedings{bolt-on,
+	Acmid = {2465279},
+	Address = {New York, NY, USA},
+	Author = {Bailis, Peter and Ghodsi, Ali and Hellerstein, Joseph M. and Stoica, Ion},
+	Booktitle = {Proceedings of the 2013 ACM SIGMOD International Conference on Management of Data},
+	Date-Added = {2015-02-16 10:58:36 +0000},
+	Date-Modified = {2015-02-16 10:59:16 +0000},
+	Doi = {10.1145/2463676.2465279},
+	Isbn = {978-1-4503-2037-5},
+	Keywords = {causal consistency, eventual consistency, separation of concerns},
+	Location = {New York, New York, USA},
+	Numpages = {12},
+	Pages = {761--772},
+	Publisher = {ACM},
+	Series = {SIGMOD '13},
+	Title = {Bolt-on Causal Consistency},
+	Url = {http://doi.acm.org/10.1145/2463676.2465279},
+	Year = {2013},
+	Bdsk-Url-1 = {http://doi.acm.org/10.1145/2463676.2465279},
+	Bdsk-Url-2 = {http://dx.doi.org/10.1145/2463676.2465279}}
+
+@inproceedings{gentleRain,
+	Acmid = {2670983},
+	Address = {New York, NY, USA},
+	Articleno = {4},
+	Author = {Du, Jiaqing and Iorgulescu, C\u{a}lin and Roy, Amitabha and Zwaenepoel, Willy},
+	Booktitle = {Proceedings of the ACM Symposium on Cloud Computing},
+	Date-Added = {2015-02-16 10:54:33 +0000},
+	Date-Modified = {2015-02-16 10:54:40 +0000},
+	Doi = {10.1145/2670979.2670983},
+	Isbn = {978-1-4503-3252-1},
+	Keywords = {Causal Consistency, Distributed Consistency, Geo-replication, Key Value Stores},
+	Location = {Seattle, WA, USA},
+	Numpages = {13},
+	Pages = {4:1--4:13},
+	Publisher = {ACM},
+	Series = {SOCC '14},
+	Title = {GentleRain: Cheap and Scalable Causal Consistency with Physical Clocks},
+	Url = {http://doi.acm.org/10.1145/2670979.2670983},
+	Year = {2014},
+	Bdsk-Url-1 = {http://doi.acm.org/10.1145/2670979.2670983},
+	Bdsk-Url-2 = {http://dx.doi.org/10.1145/2670979.2670983}}
+
+@inproceedings{cops,
+	Address = {Cascais, Portugal},
+	Author = {Lloyd, Wyatt and Freedman, Michael J. and Kaminsky, Michael and Andersen, David G.},
+	Booktitle = sosp,
+	Comment = {COPS},
+	Date-Added = {2015-02-16 10:52:32 +0000},
+	Date-Modified = {2015-02-16 10:57:54 +0000},
+	Doi = {http://doi.acm.org/10.1145/2043556.2043593},
+	Local-Url = {~/Contrib/Conferences/SOSP 2011 Cascais/current/2011-Cascais/28-lloyd-online.pdf},
+	Month = oct,
+	Pages = {401--416},
+	Publisher = acm,
+	Title = {Don't settle for eventual: scalable causal consistency for wide-area storage with {COPS}},
+	Year = {2011},
+	Bdsk-Url-1 = {http://doi.acm.org/10.1145/2043556.2043593}}
+
+@inproceedings{voldemort,
+	Acmid = {2208479},
+	Address = {Berkeley, CA, USA},
+	Author = {Sumbaly, Roshan and Kreps, Jay and Gao, Lei and Feinberg, Alex and Soman, Chinmay and Shah, Sam},
+	Booktitle = {Proceedings of the 10th USENIX Conference on File and Storage Technologies},
+	Location = {San Jose, CA},
+	Numpages = {1},
+	Pages = {18--18},
+	Publisher = {USENIX Association},
+	Series = {FAST'12},
+	Title = {Serving Large-scale Batch Computed Data with Project Voldemort},
+	Url = {http://dl.acm.org/citation.cfm?id=2208461.2208479},
+	Year = {2012},
+	Bdsk-Url-1 = {http://dl.acm.org/citation.cfm?id=2208461.2208479}}
+
+@inproceedings{orbe,
+	Address = {Santa Clara, CA, USA},
+	Author = {Du, Jiaqing and Elnikety, Sameh and Roy, Amitabha and Zwaenepoel, Willy},
+	Booktitle = socc,
+	Date-Added = {2015-02-16 10:51:50 +0000},
+	Date-Modified = {2015-02-16 10:51:55 +0000},
+	Doi = {10.1145/2523616.2523628},
+	Local-Url = {~/Contrib/replication+consistency/Orbe- Scalable Causal Consistency Using Dependency Matrices and Physical Clocks Sameh_SOCC-2013.pdf},
+	Month = oct,
+	Pages = {11:1--11:14},
+	Publisher = acm,
+	Title = {Orbe: Scalable Causal Consistency Using Dependency Matrices and Physical Clocks},
+	Url = {http://doi.acm.org/10.1145/2523616.2523628},
+	Year = 2013,
+	Bdsk-Url-1 = {http://doi.acm.org/10.1145/2523616.2523628},
+	Bdsk-Url-2 = {http://dx.doi.org/10.1145/2523616.2523628}}
+
+@inproceedings{adts,
+	Acmid = {807045},
+	Address = {New York, NY, USA},
+	Author = {Liskov, Barbara and Zilles, Stephen},
+	Booktitle = {Proceedings of the ACM SIGPLAN Symposium on Very High Level Languages},
+	Doi = {10.1145/800233.807045},
+	Location = {Santa Monica, California, USA},
+	Numpages = {10},
+	Pages = {50--59},
+	Publisher = acm,
+	Title = {Programming with {A}bstract {D}ata {T}ypes},
+	Url = {http://doi.acm.org/10.1145/800233.807045},
+	Year = {1974},
+	Bdsk-Url-1 = {http://doi.acm.org/10.1145/800233.807045},
+	Bdsk-Url-2 = {http://dx.doi.org/10.1145/800233.807045}}
+
+@inproceedings{crdts-popl,
+  title={Replicated data types: specification, verification, optimality},
+  author={Burckhardt, Sebastian and Gotsman, Alexey and Yang, Hongseok and Zawirski, Marek},
+  booktitle={ACM SIGPLAN Notices},
+  volume={49},
+  number={1},
+  pages={271--284},
+  year={2014},
+  organization={ACM}
+}
+
+@inproceedings{crdts-sss,
+	Address = {Grenoble, France},
+	Author = {Marc Shapiro and Nuno Pregui{\c c}a and Carlos Baquero and Marek Zawirski},
+	Booktitle = sss,
+	Doi = {10.1007/978-3-642-24550-3_29},
+	Local-Url = {./papers/CRDTs_SSS-2011.pdf},
+	Month = oct,
+	Pages = {386--400},
+	Publisher = springer,
+	Series = lncs,
+	Title = {Conflict-free Replicated Data Types},
+	Url = {http://www.springerlink.com/content/3rg39l2287330370/},
+	Volume = 6976,
+	Year = 2011,
+	Bdsk-Url-1 = {http://www.springerlink.com/content/3rg39l2287330370/},
+	Bdsk-Url-2 = {http://dx.doi.org/10.1007/978-3-642-24550-3_29}}
+
+@article{crdts-cvrdts,
+	Crossref = {app:1639}}
+
+@article{crdts-radts,
+	Crossref = {syn:app:1649}}
+
+@techreport{crdts-tr,
+	Address = rocq,
+	Author = {Marc Shapiro and Nuno Pregui{\c c}a and Carlos Baquero and Marek Zawirski},
+	Institution = inria,
+	Month = jan,
+	Number = {RR-7506},
+	Title = {A comprehensive study of {C}onvergent and {C}ommutative {R}eplicated {D}ata {T}ypes},
+	Url = {http://hal.archives-ouvertes.fr/inria-00555588/},
+	Year = 2011,
+	Bdsk-Url-1 = {http://hal.archives-ouvertes.fr/inria-00555588/}}
+
+@techreport{crdts-beacts,
+	Crossref = {syn:sh144}}
+
+@techreport{understanding-ec,
+	Crossref = {rep:lan:1713-tr}}
+
+@inproceedings{ec-transactions,
+	Author = {Burckhardt, Sebastian and F\"{a}hndrich, Manuel and Leijen, Daan and Sagiv, Mooly},
+	Booktitle = esop,
+	Location = {Tallinn, Estonia},
+	Month = apr,
+	Numpages = {25},
+	Publisher = springer,
+	Title = {Eventually Consistent Transactions},
+	Year = {2012}}
+
+@inproceedings{cloud-types,
+	Acmid = {2367183},
+	Address = {Berlin, Heidelberg},
+	Author = {Burckhardt, Sebastian and F\"{a}hndrich, Manuel and Leijen, Daan and Wood, Benjamin P.},
+	Booktitle = ecoop,
+	Doi = {10.1007/978-3-642-31057-7_14},
+	Location = {Beijing, China},
+	Numpages = {25},
+	Pages = {283--307},
+	Publisher = springer,
+	Title = {Cloud Types for Eventual Consistency},
+	Url = {http://dx.doi.org/10.1007/978-3-642-31057-7_14},
+	Year = {2012},
+	Bdsk-Url-1 = {http://dx.doi.org/10.1007/978-3-642-31057-7_14}}
+
+@inproceedings{dynamo,
+	Acmid = {1294281},
+	Address = {New York, NY, USA},
+	Author = {DeCandia, Giuseppe and Hastorun, Deniz and Jampani, Madan and Kakulapati, Gunavardhan and Lakshman, Avinash and Pilchin, Alex and Sivasubramanian, Swaminathan and Vosshall, Peter and Vogels, Werner},
+	Booktitle = {Proceedings of Twenty-first ACM SIGOPS Symposium on Operating Systems Principles},
+	Doi = {10.1145/1294261.1294281},
+	Isbn = {978-1-59593-591-5},
+	Keywords = {performance, reliability, scalability},
+	Location = {Stevenson, Washington, USA},
+	Numpages = {16},
+	Pages = {205--220},
+	Publisher = {ACM},
+	Series = {SOSP '07},
+	Title = {Dynamo: Amazon's Highly Available Key-value Store},
+	Url = {http://doi.acm.org/10.1145/1294261.1294281},
+	Year = {2007},
+	Bdsk-Url-1 = {http://doi.acm.org/10.1145/1294261.1294281},
+	Bdsk-Url-2 = {http://dx.doi.org/10.1145/1294261.1294281}}
+
+@inproceedings{log-dictionary,
+	Crossref = {app:rep:optim:1501}}
+
+@inproceedings{sets-disc,
+	Address = {Salvador, Bahia, Brazil},
+	Author = {Annette Bieniusa and Marek Zawirski and Nuno Pregui{\c c}a and Marc Shapiro and Carlos Baquero and Valter Balegas and S{\'e}rgio Duarte},
+	Booktitle = disc,
+	Doi = {10.1007/978-3-642-33651-5_48},
+	Month = oct,
+	Pages = {441--442},
+	Publisher = springer,
+	Series = lncs,
+	Title = {Brief Announcement: Semantics of Eventually Consistent Replicated Sets},
+	Volume = 7611,
+	Year = 2012,
+	Bdsk-Url-1 = {http://dx.doi.org/10.1007/978-3-642-33651-5_48}}
+
+@inproceedings{transactions-complexity-hotcdp,
+	Address = {Bern, Switzerland},
+	Author = {Saeida Ardekani, Masoud and Marek Zawirski and Pierre Sutra and Marc Shapiro},
+	Authorizer = {http://dl.acm.org/authorize?6645934},
+	Booktitle = intwkon # {Hot Topics in Cloud Data Processing                   (HotCDP)},
+	Doi = {10.1145/2169090.2169094},
+	Month = apr,
+	Publisher = acm,
+	Title = {The Space Complexity of Transactional Interactive Reads},
+	Url = {http://doi.acm.org/10.1145/2169090.2169094},
+	Year = 2012,
+	Bdsk-Url-1 = {http://doi.acm.org/10.1145/2169090.2169094},
+	Bdsk-Url-2 = {http://dx.doi.org/10.1145/2169090.2169094}}
+
+
+
+@misc{akka-crdts,
+	Author = {Jonas Bon{\'e}r},
+	Howpublished = {\url{https://github.com/jboner/akka-crdt}},
+	Title = {Server-managed {CRDT}s based on {A}kka},
+	Year = 2014}
+
+@inproceedings{vc,
+	Crossref = {alg:rep:738}}
+
+@misc{some-write-loses,
+	Author = {Kyle Kingsbury},
+	Howpublished = {\url{http://aphyr.com/posts/294-call-me-maybe-cassandra/}},
+	Month = sep,
+	Title = {Call me maybe: {C}assandra},
+	Year = 2013}
+
+@article{cassandra,
+	Acmid = {1773922},
+	Address = {New York, NY, USA},
+	Author = {Lakshman, Avinash and Malik, Prashant},
+	Doi = {10.1145/1773912.1773922},
+	Issn = {0163-5980},
+	Issue_Date = {April 2010},
+	Journal = {SIGOPS Oper. Syst. Rev.},
+	Month = apr,
+	Number = {2},
+	Numpages = {6},
+	Pages = {35--40},
+	Publisher = {ACM},
+	Title = {Cassandra: A Decentralized Structured Storage System},
+	Url = {http://doi.acm.org/10.1145/1773912.1773922},
+	Volume = {44},
+	Year = {2010},
+	Bdsk-Url-1 = {http://doi.acm.org/10.1145/1773912.1773922},
+	Bdsk-Url-2 = {http://dx.doi.org/10.1145/1773912.1773922}}
+
+@article{vv,
+	Author = {Parker, Jr., D. Stott and Popek, Gerald J. and Rudisin, Gerald and Stoughton, Allen and Walker, Bruce J. and Walton, Evelyn and Chow, Johanna M. and Edwards, David and Kiser, Stephen and Kline, Charles},
+	Journal = {IEEE Trans. on Soft. Engin.},
+	Month = {May},
+	Number = {3},
+	Pages = {240-247},
+	Title = {Detection of Mutual Inconsistency in Distributed Systems},
+	Volume = {SE-9},
+	Year = {1983}}
+
+@article{causality-holy-grail,
+	Author = {Schwarz, Reinhard and Mattern, Friedemann},
+	Doi = {10.1007/BF02277859},
+	Issn = {0178-2770},
+	Journal = {Distributed Computing},
+	Keywords = {Distributed computation; Causality; Distributed system; Causal ordering; Logical time; Vector time; Global predicate detection; Distributed debugging; Timestamps},
+	Number = {3},
+	Pages = {149-174},
+	Publisher = springer,
+	Title = {Detecting causal relationships in distributed computations: In search of the holy grail},
+	Url = {http://dx.doi.org/10.1007/BF02277859},
+	Volume = {7},
+	Year = {1994},
+	Bdsk-Url-1 = {http://dx.doi.org/10.1007/BF02277859}}
+
+@article{sinfonia,
+	Acmid = {1629088},
+	Address = {New York, NY, USA},
+	Articleno = {5},
+	Author = {Aguilera, Marcos K. and Merchant, Arif and Shah, Mehul and Veitch, Alistair and Karamanolis, Christos},
+	Doi = {10.1145/1629087.1629088},
+	Issn = {0734-2071},
+	Issue_Date = {November 2009},
+	Journal = {ACM Trans. Comput. Syst.},
+	Keywords = {Distributed systems, fault tolerance, scalability, shared memory, transactions, two-phase commit},
+	Month = nov,
+	Number = {3},
+	Numpages = {48},
+	Pages = {5:1--5:48},
+	Publisher = {ACM},
+	Title = {Sinfonia: A New Paradigm for Building Scalable Distributed Systems},
+	Url = {http://doi.acm.org/10.1145/1629087.1629088},
+	Volume = {27},
+	Year = {2009},
+	Bdsk-Url-1 = {http://doi.acm.org/10.1145/1629087.1629088},
+	Bdsk-Url-2 = {http://dx.doi.org/10.1145/1629087.1629088}}
+
+@inproceedings{txcache,
+	Acmid = {1924963},
+	Address = {Berkeley, CA, USA},
+	Author = {Ports, Dan R. K. and Clements, Austin T. and Zhang, Irene and Madden, Samuel and Liskov, Barbara},
+	Booktitle = {Proceedings of the 9th USENIX Conference on Operating Systems Design and Implementation},
+	Location = {Vancouver, BC, Canada},
+	Numpages = {15},
+	Pages = {1--15},
+	Publisher = {USENIX Association},
+	Series = {OSDI'10},
+	Title = {Transactional Consistency and Automatic Management in an Application Data Cache},
+	Url = {http://dl.acm.org/citation.cfm?id=1924943.1924963},
+	Year = {2010},
+	Bdsk-Url-1 = {http://dl.acm.org/citation.cfm?id=1924943.1924963}}
+
+@inproceedings{calvin,
+	Acmid = {2213838},
+	Address = {New York, NY, USA},
+	Author = {Thomson, Alexander and Diamond, Thaddeus and Weng, Shu-Chun and Ren, Kun and Shao, Philip and Abadi, Daniel J.},
+	Booktitle = {Proceedings of the 2012 ACM SIGMOD International Conference on Management of Data},
+	Doi = {10.1145/2213836.2213838},
+	Isbn = {978-1-4503-1247-9},
+	Keywords = {determinism, distributed database systems, replication, transaction processing},
+	Location = {Scottsdale, Arizona, USA},
+	Numpages = {12},
+	Pages = {1--12},
+	Publisher = {ACM},
+	Series = {SIGMOD '12},
+	Title = {Calvin: Fast Distributed Transactions for Partitioned Database Systems},
+	Url = {http://doi.acm.org/10.1145/2213836.2213838},
+	Year = {2012},
+	Bdsk-Url-1 = {http://doi.acm.org/10.1145/2213836.2213838},
+	Bdsk-Url-2 = {http://dx.doi.org/10.1145/2213836.2213838}}
+
+@inproceedings{orleans,
+	Acmid = {2038932},
+	Address = {New York, NY, USA},
+	Articleno = {16},
+	Author = {Bykov, Sergey and Geller, Alan and Kliot, Gabriel and Larus, James R. and Pandya, Ravi and Thelin, Jorgen},
+	Booktitle = {Proceedings of the 2Nd ACM Symposium on Cloud Computing},
+	Doi = {10.1145/2038916.2038932},
+	Isbn = {978-1-4503-0976-9},
+	Keywords = {cloud computing, distributed actors, programming models},
+	Location = {Cascais, Portugal},
+	Numpages = {14},
+	Pages = {16:1--16:14},
+	Publisher = {ACM},
+	Series = {SOCC '11},
+	Title = {Orleans: Cloud Computing for Everyone},
+	Url = {http://doi.acm.org/10.1145/2038916.2038932},
+	Year = {2011},
+	Bdsk-Url-1 = {http://doi.acm.org/10.1145/2038916.2038932},
+	Bdsk-Url-2 = {http://dx.doi.org/10.1145/2038916.2038932}}
+
+@inproceedings{mdcc,
+	Acmid = {2465363},
+	Address = {New York, NY, USA},
+	Author = {Kraska, Tim and Pang, Gene and Franklin, Michael J. and Madden, Samuel and Fekete, Alan},
+	Booktitle = {Proceedings of the 8th ACM European Conference on Computer Systems},
+	Doi = {10.1145/2465351.2465363},
+	Isbn = {978-1-4503-1994-2},
+	Location = {Prague, Czech Republic},
+	Numpages = {14},
+	Pages = {113--126},
+	Publisher = {ACM},
+	Series = {EuroSys '13},
+	Title = {MDCC: Multi-data Center Consistency},
+	Url = {http://doi.acm.org/10.1145/2465351.2465363},
+	Year = {2013},
+	Bdsk-Url-1 = {http://doi.acm.org/10.1145/2465351.2465363},
+	Bdsk-Url-2 = {http://dx.doi.org/10.1145/2465351.2465363}}
+
+@inproceedings{granola,
+	Acmid = {2342842},
+	Address = {Berkeley, CA, USA},
+	Author = {Cowling, James and Liskov, Barbara},
+	Booktitle = {Proceedings of the 2012 USENIX Conference on Annual Technical Conference},
+	Location = {Boston, MA},
+	Numpages = {1},
+	Pages = {21--21},
+	Publisher = {USENIX Association},
+	Series = {USENIX ATC'12},
+	Title = {Granola: Low-overhead Distributed Transaction Coordination},
+	Url = {http://dl.acm.org/citation.cfm?id=2342821.2342842},
+	Year = {2012},
+	Bdsk-Url-1 = {http://dl.acm.org/citation.cfm?id=2342821.2342842}}
+
+@techreport{log-reductions,
+	Address = {Redmond, WA, USA},
+	Author = {Sebastian Burckhardt and Daan Leijen and Manuel Fahndrich},
+	Institution = {Microsoft Research},
+	Month = mar,
+	Number = {MSR-TR-2014-43},
+	Title = {Cloud Types: Robust Abstractions for Replicated Shared State},
+	Url = {http://research.microsoft.com/apps/pubs/default.aspx?id=211340},
+	Year = 2014,
+	Bdsk-Url-1 = {http://research.microsoft.com/apps/pubs/default.aspx?id=211340}}
+
+@inproceedings{dotted-vv,
+	Address = {Berlin, Germany},
+	Author = {Paulo S{\'e}rgio Almeida and Carlos Baquero and Ricardo Gon{\c c}alves and Nuno Pregui{\c c}a and Victor Fonte},
+	Booktitle = dais,
+	Month = {June},
+	Title = {Scalable and Accurate Causality Tracking for Eventually Consistent Stores},
+	Year = {2014}}
+
+@inproceedings{redblue,
+	Crossref = {rep:syn:1690}}
+
+@inproceedings{walter,
+	Acmid = {2043592},
+	Address = {New York, NY, USA},
+	Author = {Sovran, Yair and Power, Russell and Aguilera, Marcos K. and Li, Jinyang},
+	Booktitle = {Proceedings of the Twenty-Third ACM Symposium on Operating Systems Principles},
+	Doi = {10.1145/2043556.2043592},
+	Isbn = {978-1-4503-0977-6},
+	Keywords = {asynchronous replication, distributed storage, geo-distributed systems, key-value store, parallel snapshot isolation, transactions},
+	Location = {Cascais, Portugal},
+	Numpages = {16},
+	Pages = {385--400},
+	Publisher = {ACM},
+	Series = {SOSP '11},
+	Title = {Transactional Storage for Geo-replicated Systems},
+	Url = {http://doi.acm.org/10.1145/2043556.2043592},
+	Year = {2011},
+	Bdsk-Url-1 = {http://doi.acm.org/10.1145/2043556.2043592},
+	Bdsk-Url-2 = {http://dx.doi.org/10.1145/2043556.2043592}}
+
+@article{linearizability,
+	Crossref = {loo:syn:1468}}
+
+@inproceedings{cset,
+	Address = {Heraklion, Greece},
+	Author = {Aslan, Khaled and Molli, Pascal and Skaf-Molli, Hala and Weiss, St{\'e}phane},
+	Booktitle = {{RED: Fourth International Workshop on REsource Discovery}},
+	Month = may,
+	Title = {{C-Set: a Commutative Replicated Data Type for Semantic Stores}},
+	Year = {2011}}
+
+@techreport{crdts-deltas,
+	Author = {Paulo S{\'{e}}rgio Almeida and Ali Shoker and Carlos Baquero},
+	Number = {arXiv:1410.2803},
+	Title = {Efficient State-based {CRDT}s by Delta-Mutation},
+	Url = {http://arxiv.org/abs/1410.2803},
+	Year = {2014},
+	Bdsk-Url-1 = {http://arxiv.org/abs/1410.2803}}
+
+@book{distributed-programming,
+	Author = {Cachin, Christian and Guerraoui, Rachid and Rodrigues, Lu{\'\i}s},
+	Edition = {2nd},
+	Isbn = {3642152597, 9783642152597},
+	Publisher = {Springer Publishing Company, Incorporated},
+	Title = {Introduction to Reliable and Secure Distributed Programming},
+	Year = {2011}}
+
+@article{cap-12-years-layer,
+	Crossref = {rep:syn:1666}}
+
+@techreport{cac,
+	Crossref = {conavcon},
+	Date-Modified = {2015-02-16 11:04:48 +0000}}
+
+@inproceedings{bayou,
+	Acmid = {504497},
+	Address = {New York, NY, USA},
+	Author = {Petersen, Karin and Spreitzer, Mike and Terry, Douglas and Theimer, Marvin},
+	Booktitle = {Proceedings of the 7th Workshop on ACM SIGOPS European Workshop: Systems Support for Worldwide Applications},
+	Doi = {10.1145/504450.504497},
+	Location = {Connemara, Ireland},
+	Numpages = {6},
+	Pages = {275--280},
+	Publisher = {ACM},
+	Series = {EW 7},
+	Title = {Bayou: Replicated Database Services for World-wide Applications},
+	Url = {http://doi.acm.org/10.1145/504450.504497},
+	Year = {1996},
+	Bdsk-Url-1 = {http://doi.acm.org/10.1145/504450.504497},
+	Bdsk-Url-2 = {http://dx.doi.org/10.1145/504450.504497}}
+
+@inproceedings{eiger,
+	Address = {Lombard, IL, USA},
+	Author = {Wyatt Lloyd and Michael J. Freedman and Michael Kaminsky and David G. Andersen},
+	Booktitle = nsdi,
+	Comment = {Eiger},
+	Local-Url = {~/Contrib/replication+consistency/Stronger Semantics for Low-Latency Geo-Replicated Storage eiger-nsdi_2013.pdf},
+	Month = apr,
+	Pages = {313--328},
+	Publisher = usenix,
+	Title = {Stronger Semantics for Low-Latency Geo-Replicated Storage},
+	Url = {https://www.usenix.org/system/files/conference/nsdi13/nsdi13-final149.pdf},
+	Year = 2013,
+	Bdsk-Url-1 = {https://www.usenix.org/system/files/conference/nsdi13/nsdi13-final149.pdf}}
+
+@inproceedings{practi,
+	Acmid = {1267685},
+	Address = {Berkeley, CA, USA},
+	Author = {Belaramani, Nalini and Dahlin, Mike and Gao, Lei and Nayate, Amol and Venkataramani, Arun and Yalagandula, Praveen and Zheng, Jiandan},
+	Booktitle = {Proceedings of the 3rd Conference on Networked Systems Design \& Implementation - Volume 3},
+	Location = {San Jose, CA},
+	Numpages = {1},
+	Pages = {5--5},
+	Publisher = {USENIX Association},
+	Series = {NSDI'06},
+	Title = {PRACTI Replication},
+	Url = {http://dl.acm.org/citation.cfm?id=1267680.1267685},
+	Year = {2006},
+	Bdsk-Url-1 = {http://dl.acm.org/citation.cfm?id=1267680.1267685}}
+
+@article{depot,
+	Crossref = {rep:1712}}
+
+@online{perf-impact,
+	Author = {E. Schurman and J. Brutlag.},
+	Month = jun,
+	Note = {Velocity Web Performance and Operations Conference},
+	Title = {Performance Related Changes and their User Impact},
+	Url = {https://www.youtube.com/watch?v=bQSE51-gr2s},
+	Year = 2009,
+	Bdsk-Url-1 = {https://www.youtube.com/watch?v=bQSE51-gr2s}}
+
+@article{50ms,
+	Author = {Jay, Caroline and Glencross, Mashhuda and Hubbold, Roger},
+	Doi = {10.1145/1275511.1275514},
+	Journal = {ACM Trans.\ Comput.-Hum.\ Interact.},
+	Month = aug,
+	Number = 2,
+	Title = {Modeling the effects of delayed haptic and visual feedback in a collaborative virtual environment},
+	Url = {http://doi.acm.org/10.1145/1275511.1275514},
+	Volume = 14,
+	Year = 2007,
+	Bdsk-Url-1 = {http://doi.acm.org/10.1145/1275511.1275514},
+	Bdsk-Url-2 = {http://dx.doi.org/10.1145/1275511.1275514}}
+
+@inproceedings{chainreaction,
+	Author = {Almeida, S{\'e}rgio and Leit\~{a}o, Jo{\~a}o and Rodrigues, Lu{\'\i}s},
+	Booktitle = eurosys,
+	Month = apr,
+	Title = {{ChainReaction}: a Causal+ Consistent Datastore based on {C}hain {R}eplication},
+	Year = 2013}
+
+@inproceedings{chain-replication,
+	Crossref = {pan:rep:1712}}
+
+@article{k-durability,
+	Author = {Brzezi{{\'n}}ski, Jerzy and Dwornikowski, Dariusz and Pi{{\k{a}}}tkowski, {{\L{}}}ukasz and Soba{{\'n}}ski, Grzegorz},
+	Journal = {Parallel Processing and Applied Mathematics},
+	Pages = {30--39},
+	Title = {{K}-resilient session guarantees synchronization protocol for mobile ad-hoc networks},
+	Volume = {7203},
+	Year = {2012}}
+
+@inproceedings{hat,
+	Address = {Riva del Garda, Trento, Italy},
+	Author = {Peter Bailis and Aaron Davidson and Alan Fekete and Ali Ghodsi and Joseph M. Hellerstein and Ion Stoica},
+	Booktitle = vldb,
+	Title = {{H}ighly {A}vailable {T}ransactions: Virtues and Limitations},
+	Year = {2014}}
+
+@inproceedings{megastore,
+	Author = {Jason Baker and Chris Bond and James C. Corbett and JJ Furman and Andrey Khorlin and James Larson and Jean-Michel Leon and Yawei Li and Alexander Lloyd and Vadim Yushprakh},
+	Booktitle = {Proceedings of the Conference on Innovative Data system Research (CIDR)},
+	Pages = {223--234},
+	Title = {Megastore: Providing Scalable, Highly Available Storage for Interactive Services},
+	Url = {http://www.cidrdb.org/cidr2011/Papers/CIDR11_Paper32.pdf},
+	Year = 2011,
+	Bdsk-Url-1 = {http://www.cidrdb.org/cidr2011/Papers/CIDR11_Paper32.pdf}}
+
+@book{isis,
+	Address = {Los Alamitos, CA, USA},
+	Author = {Birman, Kenneth P. and Renesse, Robert V.},
+	Isbn = {0818653426},
+	Publisher = {IEEE Computer Society Press},
+	Title = {Reliable Distributed Computing with the ISIS Toolkit},
+	Year = {1994}}
+
+@inproceedings{spanner,
+	Acmid = {2387905},
+	Address = {Berkeley, CA, USA},
+	Author = {Corbett, James C. and Dean, Jeffrey and Epstein, Michael and Fikes, Andrew and Frost, Christopher and Furman, J. J. and Ghemawat, Sanjay and Gubarev, Andrey and Heiser, Christopher and Hochschild, Peter and Hsieh, Wilson and Kanthak, Sebastian and Kogan, Eugene and Li, Hongyi and Lloyd, Alexander and Melnik, Sergey and Mwaura, David and Nagle, David and Quinlan, Sean and Rao, Rajesh and Rolig, Lindsay and Saito, Yasushi and Szymaniak, Michal and Taylor, Christopher and Wang, Ruth and Woodford, Dale},
+	Booktitle = {Proceedings of the 10th USENIX Conference on Operating Systems Design and Implementation},
+	Isbn = {978-1-931971-96-6},
+	Location = {Hollywood, CA, USA},
+	Numpages = {14},
+	Pages = {251--264},
+	Publisher = {USENIX Association},
+	Series = {OSDI'12},
+	Title = {Spanner: Google's Globally-distributed Database},
+	Url = {http://dl.acm.org/citation.cfm?id=2387880.2387905},
+	Year = {2012},
+	Bdsk-Url-1 = {http://dl.acm.org/citation.cfm?id=2387880.2387905}}
+
+@inproceedings{nmsi,
+	Crossref = {rep:syn:sh158}}
+
+@inproceedings{lynx,
+	Author = {Zhang, Yang and Power, Russell and Zhou, Siyuan and Sovran, Yair and Aguilera, Marcos K. and Li, Jinyang},
+	Booktitle = sosp,
+	Month = nov,
+	Title = {Transaction Chains: Achieving Serializability with Low Latency in Geo-distributed Storage Systems},
+	Year = {2013}}
+
+@inproceedings{socialnet-patterns,
+	Author = {Benevenuto, Fabr\'{\i}cio and Rodrigues, Tiago and Cha, Meeyoung and Almeida, Virg\'{\i}lio},
+	Booktitle = {Internet Measurement Conference ({IMC})},
+	Title = {Characterizing user behavior in online social networks},
+	Year = {2009}}
+
+@inproceedings{explicit-cc,
+	Author = {Peter Bailis and Alan Fekete and Ali Ghodsi and Joseph M. Hellerstein and Ion Stoica},
+	Booktitle = socc,
+	Title = {The Potential Dangers of Causal Consistency and an Explicit Solution},
+	Year = {2012}}
+
+@inproceedings{session-guarantees,
+	Crossref = {rep:syn:1481}}
+
+@misc{realtime-api,
+	Author = {Brian Cairns},
+	Howpublished = {Google Apps Developers Blog},
+	Month = mar,
+	Title = {Build collaborative apps with {G}oogle {D}rive {R}ealtime {API}},
+	Url = {http://googleappsdeveloper.blogspot.com/2013/03/build-collaborative-apps-with-google.html},
+	Year = 2013,
+	Bdsk-Url-1 = {http://googleappsdeveloper.blogspot.com/2013/03/build-collaborative-apps-with-google.html}}
+
+
+
+@misc{touchdevelop-cloud,
+	Author = {Sebastian Burckhardt},
+	Howpublished = {Inside {M}icrosoft {R}esearch Blog},
+	Month = oct,
+	Title = {Bringing {T}ouch{D}evelop to the Cloud},
+	Url = {http://blogs.technet.com/b/inside_microsoft_research/archive/2013/10/28/bringing-touchdevelop-to-the-cloud.aspx},
+	Year = 2013,
+	Bdsk-Url-1 = {http://blogs.technet.com/b/inside_microsoft_research/archive/2013/10/28/bringing-touchdevelop-to-the-cloud.aspx}}
+
+@misc{riak,
+	Title = {Riak Distributed Database},
+	howpublished = "\url{http://basho.com/riak/}",
+	Year = 2015,
+	Bdsk-Url-1 = {http://basho.com/riak/}}
+
+@misc{kryo,
+	Title = {Kryo {J}ava serialization library, version 2.24},
+	Url = {https://github.com/EsotericSoftware/kryo},
+	Year = 2014,
+	Bdsk-Url-1 = {https://github.com/EsotericSoftware/kryo}}
+
+@misc{riak-crdts,
+	Month = oct,
+	Title = {Data {T}ypes in {R}iak},
+	Url = {http://docs.basho.com/riak/latest/theory/concepts/crdts/},
+	Year = 2014,
+	Bdsk-Url-1 = {http://docs.basho.com/riak/latest/theory/concepts/crdts/}}
+
+@misc{facebook-georeplication,
+	Author = {Jason Sobel},
+	Howpublished = {Engineering @ Facebook Notes},
+	Month = aug,
+	Title = {Scaling Out},
+	Url = {http://www.facebook.com/note.php?note_id=23844338919},
+	Year = 2008,
+	Bdsk-Url-1 = {http://www.facebook.com/note.php?note_id=23844338919}}
+
+@misc{azure-georeplication,
+	Author = {Brad Calder and Monilee Atkinson},
+	Howpublished = {Windows Azure Storage Team Blog},
+	Month = sep,
+	Title = {Introducing Geo-replication for {W}indows {A}zure {S}torage},
+	Url = {http://blogs.msdn.com/b/windowsazurestorage/archive/2011/09/15/introducing-geo-replication-for-windows-azure-storage.aspx},
+	Year = 2011,
+	Bdsk-Url-1 = {http://blogs.msdn.com/b/windowsazurestorage/archive/2011/09/15/introducing-geo-replication-for-windows-azure-storage.aspx}}
+
+@misc{google-georeplication,
+	Author = {Kevin Gibbs},
+	Howpublished = {Google App Engine Blog},
+	Month = jan,
+	Title = {Announcing the High Replication Datastore for {A}pp {E}ngine},
+	Url = {http://googleappengine.blogspot.fr/2011/01/announcing-high-replication-datastore.html},
+	Year = 2011,
+	Bdsk-Url-1 = {http://googleappengine.blogspot.fr/2011/01/announcing-high-replication-datastore.html}}
+
+@misc{amazon-outage,
+	Author = {{The AWS Team}},
+	Howpublished = {Amazon Web Services messages},
+	Month = apr,
+	Title = {Summary of the {A}mazon {EC2} and {A}mazon {RDS} Service Disruption in the {US} {E}ast Region},
+	Url = {http://aws.amazon.com/fr/message/65648/},
+	Year = 2011,
+	Bdsk-Url-1 = {http://aws.amazon.com/fr/message/65648/}}
+
+@inproceedings{zookeeper,
+	Address = {Boston, MA, USA},
+	Author = {Hunt, Patrick and Konar, Mahadev and Junqueira, Flavio P. and Reed, Benjamin},
+	Booktitle = {usenix-atc},
+	Pages = {11--11},
+	Title = {ZooKeeper: Wait-free Coordination for Internet-scale Systems},
+	Year = {2010}}
+
+
+@inproceedings{dc-failures,
+	Address = {Santa Ana Pueblo, NM, USA},
+	Author = {Kansal, Aman and Urgaonkar, Bhuvan and Govindan, Sriram},
+	Booktitle = {Hot Topics in Operating Systems},
+	Title = {Using Dark Fiber to Displace Diesel Generators},
+	Year = {2013}}
+
+@inproceedings{ycsb,
+	Address = {Indianapolis, IN, USA},
+	Author = {Cooper, Brian F. and Silberstein, Adam and Tam, Erwin and Ramakrishnan, Raghu and Sears, Russell},
+	Booktitle = socc,
+	Pages = {143--154},
+	Title = {Benchmarking Cloud Serving Systems with {YCSB}},
+	Year = {2010}}
+
+@inproceedings{genuine-partial,
+	Crossref = {db:rep:1650}}
+
+@inproceedings{quasi-genuine-partial,
+	Address = {Bordeaux, France},
+	Author = {Schiper, Nicolas and Schmidt, Rodrigo and Pedone, Fernando},
+	Booktitle = opodis,
+	Month = dec,
+	Pages = {81--93},
+	Publisher = springer,
+	Series = lncs,
+	Title = {Optimistic Algorithms for Partial Database Replication},
+	Volume = 4305,
+	Year = {2006}}
+
+@misc{call-for-crdts-for-mobile,
+	Author = {Noel Welsh},
+	Howpublished = {Noel Welsh's Blog},
+	Month = dec,
+	Title = {{CRDT}s for fun and eventual profit},
+	Url = {http://noelwelsh.com/programming/2013/12/20/crdts-for-fun-and-eventual-profit/},
+	Year = 2013,
+	Bdsk-Url-1 = {http://noelwelsh.com/programming/2013/12/20/crdts-for-fun-and-eventual-profit/}}
+
+@inproceedings{n-stability-papec,
+	Crossref = {syn:rep:1727}}
+
+@inproceedings{orestes,
+	Address = {Chicago, IL, USA},
+	Author = {Felix Gessert and Florian B{\"u}cklers and Norbert Ritter},
+	Booktitle = intwkon # {Cloud Data Management},
+	Local-Url = {~/Contrib/replication+consistency/ORESTES- a Scalable Database-as-a-Service Architecture for Low Latency.pdf},
+	Month = apr,
+	Title = {Orestes: a Scalable Database-as-a-Service Architecture for Low Latency},
+	Url = {http://www.baqend.com/img/Paper-25bf34ae.pdf},
+	Year = 2014,
+	Bdsk-Url-1 = {http://www.baqend.com/img/Paper-25bf34ae.pdf}}
+
+@article{vv-with-exceptions,
+	Crossref = {rep:1684}}
+
+@proceedings{ec-cc-gap,
+	Crossref = {syn:rep:1727}}
+
+@inproceedings{exo-leasing,
+	Crossref = {rep:syn:1715}}
+
+@techreport{handoff-counters,
+	Author = {Paulo S{\'e}rgio Almeida and Carlos Baquero},
+	Comment = {handoff counters, hand-off counters},
+	Local-Url = {~/Contrib/CRDTs/Scalable Eventually Consistent Counters over Unreliable Networks Baquero 2013.pdf},
+	Month = jul,
+	Number = {arXiv:1307.3207},
+	Title = {Scalable Eventually Consistent Counters over Unreliable Networks},
+	Url = {http://arxiv.org/abs/1307.3207},
+	Year = 2013,
+	Bdsk-Url-1 = {http://arxiv.org/abs/1307.3207}}
+
+@techreport{orswot,
+	Address = rocq,
+	Author = {Annette Bieniusa and Marek Zawirski and Nuno Pregui{\c c}a and Marc Shapiro and Carlos Baquero and Valter Balegas and S{\'e}rgio Duarte},
+	Institution = inria,
+	Month = oct,
+	Number = {RR-8083},
+	Title = {An Optimized Conflict-free Replicated Set},
+	Url = {http://hal.inria.fr/hal-00738680},
+	Year = 2012,
+	Bdsk-Url-1 = {http://hal.inria.fr/hal-00738680}}
+
+@misc{redis,
+	Author = {Redis},
+	Howpublished = {\url{http://redis.io/}},
+	Month = may,
+	Title = {Redis is an open source, {BSD} licensed, advanced key-value store},
+	Year = 2014}
+
+@inproceedings{thialfi,
+	Author = {Adya, Atul and Cooper, Gregory and Myers, Daniel and Piatek, Michael},
+	Booktitle = sosp,
+	Title = {Thialfi: A Client Notification Service for {I}nternet-scale Applications},
+	Year = {2011}}
+
+@inproceedings{ramp,
+	Author = {Peter Bailis and Alan Fekete and Ali Ghodsi and Joseph M. Hellerstein and Ion Stoica},
+	Booktitle = sigmod,
+	Title = {Scalable atomic visibility with {RAMP} Transactions},
+	Year = {2014}}
+
+@unpublished{cprdts,
+	Author = {Iwan Briquemont and Manuel Bravo and Zhongmiao Li and and Peter Van Roy},
+	Note = {In submission},
+	Title = {Optimising Client-side Geo-replication with Partially Replicated Data Structures},
+	Year = 2014}
+
+@article{partitions,
+	Author = {Peter Bailis and Kyle Kingsbury},
+	Issue_Date = {July 2014},
+	Journal = acmqueue,
+	Title = {The Network is Reliable: An Informal Survey of Real-World Communications Failures},
+	Year = {2014}}
+
+@phdthesis{golding-stability,
+	Address = {Santa Cruz, CA, USA},
+	Author = {Richard A. Golding},
+	Group = {wdoc},
+	Keywords = {pan,pro,optim},
+	Month = dec,
+	Note = {Tech. Report UCSC-CRL-92-52},
+	School = {University of California Santa Cruz},
+	Title = {Weak-consistency group communication and membership},
+	Url = {ftp://ftp.cse.ucsc.edu/pub/tr/ucsc-crl-92-52.ps.Z},
+	Year = 1992,
+	Bdsk-Url-1 = {ftp://ftp.cse.ucsc.edu/pub/tr/ucsc-crl-92-52.ps.Z}}
+
+@inproceedings{mobius,
+	Address = {New York, NY, USA},
+	Author = {Chun, Byung-Gon and Curino, Carlo and Sears, Russell and Shraer, Alexander and Madden, Samuel and Ramakrishnan, Raghu},
+	Booktitle = mobisys,
+	Pages = {141--154},
+	Title = {Mobius: Unified Messaging and Data Serving for Mobile Apps},
+	Year = {2012}}
+
+@inproceedings{coordination-avoidance,
+	Address = {Kohala Coast, Hawaii},
+	Author = {Peter Bailis and Alan Fekete and Michael J. Franklin and Ali Ghodsi and Joseph M. Hellerstein and Ion Stoica},
+	Booktitle = vldb,
+	Note = {To appear},
+	Title = {Coordination Avoidance in Database Systems},
+	Year = {2015}}
+
+@article{ec-vogels,
+	Crossref = {rep:syn:pan:1624}}
+
+@book{databases-phil-bernstein,
+	Crossref = {syn:db:1467}}
+
+@book{serializability,
+	Crossref = {syn:db:1467}}
+
+@online{reconciliation-ec,
+	Author = {Carlos, Baquero},
+	Month = nov,
+	Title = {Scaling up Reconciliation in Eventual Consistency},
+	Url = {http://haslab.wordpress.com/2012/11/28/scaling-up-reconciliation-in-eventual-consistency/},
+	Year = 2012,
+	Bdsk-Url-1 = {http://haslab.wordpress.com/2012/11/28/scaling-up-reconciliation-in-eventual-consistency/}}
+
+@article{edelweiss,
+	Author = {Conway, Neil and Alvaro, Peter and Andrews, Emily and Hellerstein, Joseph M},
+	Journal = pvldb,
+	Number = {6},
+	Title = {Edelweiss: Automatic Storage Reclamation for Distributed Programming},
+	Volume = {7},
+	Year = {2014}}
+
+@inproceedings{orset-icdcs,
+	Address = {Washington, DC, USA},
+	Author = {Deftu, Andrei and Griebsch, Jan},
+	Booktitle = icdcs,
+	Numpages = {10},
+	Pages = {186--195},
+	Title = {A Scalable Conflict-Free Replicated Set Data Type},
+	Year = {2013}}
+
+@inproceedings{orset-icdcn,
+	Author = {Mukund, Madhavan and Shenoy, Gautham and Suresh, S. P.},
+	Booktitle = icdcn,
+	Pages = {227--241},
+	Publisher = {Springer},
+	Title = {Optimized {OR}-sets without ordering constraints},
+	Year = {2014}}
+
+@inproceedings{tombstones-nikolaj,
+	Crossref = {syn:rep:1652}}
+
+@unpublished{remove-wins,
+	Author = {Annette Bieniusa and Marek Zawirski and Nuno Pregui{\c c}a and Marc Shapiro and Carlos Baquero and Valter Balegas and S{\'e}rgio Duarte},
+	Month = oct,
+	Note = {Unpublished extension of the technical report \cite{orswot}},
+	Title = {An Optimized Conflict-free Replicated Set: Additional Material},
+	Year = 2012}
+
+@unpublished{composition,
+	Author = {Alexey Gotsman and Hongseok Yang},
+	Note = {In submission},
+	Title = {Composite Replicated Data Types},
+	Url = {http://software.imdea.org/~gotsman/papers/compos.pdf},
+	Year = 2014,
+	Bdsk-Url-1 = {http://software.imdea.org/~gotsman/papers/compos.pdf}}
+
+@inproceedings{blooml,
+	Address = {New York, NY, USA},
+	Author = {Conway, Neil and Marczak, William R. and Alvaro, Peter and Hellerstein, Joseph M. and Maier, David},
+	Booktitle = socc,
+	Location = {San Jose, California},
+	Publisher = {ACM},
+	Title = {Logic and Lattices for Distributed Programming},
+	Url = {http://doi.acm.org/10.1145/2391229.2391230},
+	Year = {2012},
+	Bdsk-Url-1 = {http://doi.acm.org/10.1145/2391229.2391230}}
+
+@inproceedings{treedoc,
+	Crossref = {alg:rep:sh131}}
+
+@inproceedings{logoot,
+	Crossref = {app:rep:1625}}
+
+@inproceedings{woot,
+	Crossref = {app:rep:1587}}
+
+@inproceedings{ot-orig,
+	Crossref = {app:optim:1602}}
+
+@inproceedings{ot-ttf,
+	Author = {G{\'e}rald Oster and Pascal Molli and Pascal Urso. and Abdessamad Imine},
+	Booktitle = collaboratecom,
+	Month = nov,
+	Title = {{T}ombstone {T}ransformation {F}unctions for Ensuring Consistency in Collaborative Editing Systems},
+	Year = {2006}}
+
+@techreport{ot-verification,
+	Author = {G{\'e}rald Oster and Pascal Urso and Pascal Molli and Abdessamad Imine},
+	Institution = {LORIA -- INRIA Lorraine},
+	Keywords = {app,rep},
+	Local-Url = {~/Contrib/replication+consistency/Proving_correctness_of_OT-Oster-RR5795-2007.pdf},
+	Month = dec,
+	Number = {RR-5795},
+	Pages = 48,
+	Title = {Proving Correctness of Transformation Functions in Collaborative Editing Systems},
+	Url = {http://hal.inria.fr/inria-00071213/},
+	Year = 2005,
+	Bdsk-Url-1 = {http://hal.inria.fr/inria-00071213/}}
+
+@inproceedings{lseq,
+	Address = {New York, NY, USA},
+	Author = {N{\'e}delec, Brice and Molli, Pascal and Mostefaoui, Achour and Desmontils, Emmanuel},
+	Booktitle = {Proceedings of the ACM Symposium on Document Engineering},
+	Location = {Florence, Italy},
+	Numpages = {10},
+	Pages = {37--46},
+	Publisher = acm,
+	Series = {DocEng '13},
+	Title = {{LSEQ}: An Adaptive Structure for Sequences in Distributed Collaborative Editing},
+	Url = {http://doi.acm.org/10.1145/2494266.2494278},
+	Year = {2013},
+	Bdsk-Url-1 = {http://doi.acm.org/10.1145/2494266.2494278}}
+
+@article{vc-optimal,
+	Author = {Charron-Bost, Bernadette},
+	Journal = {Information Processing Letters},
+	Number = 1,
+	Title = {Concerning the size of logical clocks in distributed systems},
+	Volume = 39,
+	Year = 1991}
+
+@inproceedings{timestamp-complexity,
+	Author = {Helmi, Maryam and Higham, Lisa and Pacheco, Eduardo and Woelfel, Philipp},
+	Booktitle = {PODC},
+	Title = {The space complexity of long-lived and one-shot timestamp implementations},
+	Year = {2011}}
+
+@inproceedings{aggregation-counting,
+	Author = {Chen, Jen-Yeu and Pandurangan, Gopal},
+	Booktitle = sympon # {Parallelism in Algorithms and Architectures},
+	Title = {Optimal gossip-based aggregate computation},
+	Year = {2010}}
+
+@inproceedings{counting-nets,
+	Author = {Moran, Shlomo and Taubenfeld, Gadi and Yadin, Irit},
+	Booktitle = podc,
+	Title = {Concurrent counting},
+	Year = {1992}}
+
+@article{100s-impossibility,
+	Acmid = {966042},
+	Address = {London, UK},
+	Author = {Fich, Faith and Ruppert, Eric},
+	Doi = {10.1007/s00446-003-0091-y},
+	Journal = {Distrib. Comput.},
+	Month = sep,
+	Number = {2-3},
+	Numpages = {43},
+	Pages = {121--163},
+	Publisher = springer,
+	Title = {Hundreds of Impossibility Results for Distributed Computing},
+	Url = {http://dx.doi.org/10.1007/s00446-003-0091-y},
+	Volume = {16},
+	Year = {2003},
+	Bdsk-Url-1 = {http://dx.doi.org/10.1007/s00446-003-0091-y}}
+
+@inproceedings{crdts-pure-op-based,
+	Address = {Berlin, Germany},
+	Author = {Carlos Baquero and Paulo S{\'e}rgio Almeida and Ali Shoker},
+	Booktitle = dais,
+	Month = {June},
+	Title = {Making Operation-Based {CRDT}s Operation-Based},
+	Year = {2014}}
+
+@inproceedings{ficus,
+	Crossref = {fic:rep:722}}
+
+@inproceedings{lenses,
+	Address = {New York, NY, USA},
+	Author = {Hofmann, Martin and Pierce, Benjamin and Wagner, Daniel},
+	Booktitle = popl,
+	Location = {Austin, Texas, USA},
+	Numpages = {14},
+	Pages = {371--384},
+	Publisher = acm,
+	Title = {Symmetric Lenses},
+	Year = {2011}}
+
+@misc{gmail-mobile,
+	Author = {Robert Kroeger},
+	Howpublished = {Google Code Blog},
+	Month = jun,
+	Title = {Gmail for Mobile {HTML5} Series: Cache Pattern For Offline {HTML}5 Web Applications},
+	Url = {http://googlecode.blogspot.com/2009/06/gmail-for-mobile-html5-series-cache.html},
+	Year = 2009,
+	Bdsk-Url-1 = {http://googlecode.blogspot.com/2009/06/gmail-for-mobile-html5-series-cache.html}}
+
+@misc{html5-offline-magazine,
+	Author = {Craig Shoemaker},
+	Howpublished = {CODE Magazine},
+	Title = {Build an {HTML5} Offline Application with {A}pplication {C}ache, {W}eb {S}torage and {ASP}.{NET} {MVC}},
+	Url = {http://www.codemag.com/Article/1112051},
+	Year = 2013,
+	Bdsk-Url-1 = {http://www.codemag.com/Article/1112051}}
+
+@inproceedings{fidelity-mobile,
+	Author = {Kaushik Veeraraghavan and Venugopalan Ramasubramanian and Thomas L. Rodeheffer and Douglas B. Terry and Ted Wobber},
+	Booktitle = mobisys,
+	Month = jun,
+	Publisher = acm,
+	Title = {Fidelity-Aware Replication for Mobile Devices},
+	Url = {http://research.microsoft.com/apps/pubs/default.aspx?id=80670},
+	Year = {2009},
+	Bdsk-Url-1 = {http://research.microsoft.com/apps/pubs/default.aspx?id=80670}}
+
+@inproceedings{cimbiosys,
+	Author = {Venugopalan Ramasubramanian and Thomas Rodeheffer and Douglas B. Terry and Meg Walraed-Sullivan and Ted Wobber and Cathy Marshall and Amin Vahdat},
+	Booktitle = nsdi,
+	Title = {Cimbiosys: A platform for content-based partial replication},
+	Year = {2009}}
+
+@inproceedings{consistency-borders,
+	Address = {Santa Clara, CA, USA},
+	Author = {Peter Alvaro and Peter Bailis and Neil Conway and Joseph M. Hellerstein},
+	Booktitle = socc,
+	Month = oct,
+	Title = {Consistency without Borders},
+	Year = 2013}
+
+@inproceedings{sg-cc,
+	Author = {Brzezi\'{n}ski, Jerzy and Sobaniec, Cezary and Wawrzyniak, Dariusz},
+	Booktitle = {Euromicro Conference on Parallel, Distributed and Network based Processing},
+	Title = {From session causality to causal consistency},
+	Year = {2004}}
+
+@inproceedings{editing-mehdi,
+	Author = {Ahmed-Nacer, Mehdi and Urso, Pascal and Balegas, Valter and Pregui{\c c}a, Nuno},
+	Booktitle = collaboratecom,
+	Month = oct,
+	Pages = {148-157},
+	Title = {Concurrency control and awareness support for multi-synchronous collaborative editing},
+	Year = {2013}}
+
+@inproceedings{dbproxy,
+	Author = {Khalil Amiri and Sanghyun Park and Renu Tewari},
+	Booktitle = icde,
+	Pages = {821--831},
+	Title = {{DBProxy}: A dynamic data cache for Web applications},
+	Year = {2003}}
+
+@inproceedings{cachetables,
+	Author = {Mehmet Alt{\i}nel and Christof Bornhoevd and Sailesh Krishnamurthy and C. Mohan and Hamid Pirahesh and Berthold Reinwald},
+	Booktitle = vldb,
+	Pages = {718--729},
+	Title = {Cache Tables: Paving the Way for an Adaptive Database Cache},
+	Year = {2003}}
+
+@article{linearizability-cost,
+	Acmid = {176576},
+	Author = {Attiya, Hagit and Welch, Jennifer L.},
+	Doi = {10.1145/176575.176576},
+	Issn = {0734-2071},
+	Journal = tocs,
+	Month = may,
+	Number = {2},
+	Numpages = {32},
+	Pages = {91--122},
+	Publisher = acm,
+	Title = {Sequential Consistency Versus Linearizability},
+	Url = {http://doi.acm.org/10.1145/176575.176576},
+	Volume = {12},
+	Year = {1994},
+	Bdsk-Url-1 = {http://doi.acm.org/10.1145/176575.176576},
+	Bdsk-Url-2 = {http://dx.doi.org/10.1145/176575.176576}}
+
+@inproceedings{riak-maps,
+	Address = {Amsterdam, the Netherlands},
+	Author = {Brown, Russell and Cribbs, Sean and Meiklejohn, Christopher and Elliott, Sam},
+	Booktitle = papec,
+	Publisher = acm,
+	Title = {Riak {DT} Map: A Composable, Convergent Replicated Dictionary},
+	Year = 2014}
+
+@article{semantics-multicast,
+	Acmid = {642783},
+	Address = {Washington, DC, USA},
+	Author = {Pereira, Jos{\'e} and Rodrigues, Lu\'{\i}s and Oliveira, Rui},
+	Doi = {10.1109/TC.2003.1176983},
+	Issn = {0018-9340},
+	Journal = ieeetc,
+	Month = feb,
+	Number = {2},
+	Numpages = {16},
+	Pages = {150--165},
+	Publisher = ieee,
+	Title = {Semantically Reliable Multicast: Definition, Implementation, and Performance Evaluation},
+	Url = {http://dx.doi.org/10.1109/TC.2003.1176983},
+	Volume = {52},
+	Year = 2003,
+	Bdsk-Url-1 = {http://dx.doi.org/10.1109/TC.2003.1176983}}
+
+@inproceedings{semantics-groupware,
+	Acmid = {358972},
+	Address = {New York, NY, USA},
+	Author = {Pregui\c{c}a, Nuno and Martins, J. Legatheaux and Domingos, Henrique and Duarte, S{\'e}rgio},
+	Booktitle = cscw,
+	Doi = {10.1145/358916.358972},
+	Isbn = {1-58113-222-0},
+	Location = {Philadelphia, Pennsylvania, USA},
+	Numpages = {10},
+	Pages = {69--78},
+	Publisher = acm,
+	Title = {Data Management Support for Asynchronous Groupware},
+	Url = {http://doi.acm.org/10.1145/358916.358972},
+	Year = {2000},
+	Bdsk-Url-1 = {http://doi.acm.org/10.1145/358916.358972},
+	Bdsk-Url-2 = {http://dx.doi.org/10.1145/358916.358972}}
+
+@inproceedings{treedoc-rebalancing,
+	Address = {Saint-Malo, France},
+	Author = {Marek Zawirski and Marc Shapiro and Nuno Pregui{\c c}a},
+	Booktitle = cfse,
+	Local-Url = {./papers/Asynch rebalancing of a replicated tree Zawirski-CFSE-2011.pdf},
+	Month = may,
+	Title = {Asynchronous rebalancing of a replicated tree},
+	Year = 2011}
+
+@inproceedings{tango,
+	Acmid = {2522732},
+	Address = {New York, NY, USA},
+	Author = {Balakrishnan, Mahesh and Malkhi, Dahlia and Wobber, Ted and Wu, Ming and Prabhakaran, Vijayan and Wei, Michael and Davis, John D. and Rao, Sriram and Zou, Tao and Zuck, Aviad},
+	Booktitle = sosp,
+	Doi = {10.1145/2517349.2522732},
+	Isbn = {978-1-4503-2388-8},
+	Location = {Farminton, Pennsylvania},
+	Month = nov,
+	Numpages = {16},
+	Pages = {325--340},
+	Publisher = acm,
+	Title = {Tango: Distributed Data Structures over a Shared Log},
+	Url = {http://doi.acm.org/10.1145/2517349.2522732},
+	Year = {2013},
+	Bdsk-Url-1 = {http://doi.acm.org/10.1145/2517349.2522732},
+	Bdsk-Url-2 = {http://dx.doi.org/10.1145/2517349.2522732}}
+
+@article{Lakshman:2010:CDS:1773912.1773922,
+	Acmid = {1773922},
+	Address = {New York, NY, USA},
+	Author = {Lakshman, Avinash and Malik, Prashant},
+	Doi = {10.1145/1773912.1773922},
+	Issn = {0163-5980},
+	Issue_Date = {April 2010},
+	Journal = {SIGOPS Oper. Syst. Rev.},
+	Month = apr,
+	Number = {2},
+	Numpages = {6},
+	Pages = {35--40},
+	Publisher = {ACM},
+	Title = {Cassandra: A Decentralized Structured Storage System},
+	Url = {http://doi.acm.org/10.1145/1773912.1773922},
+	Volume = {44},
+	Year = {2010},
+	Bdsk-Url-1 = {http://doi.acm.org/10.1145/1773912.1773922},
+	Bdsk-Url-2 = {http://dx.doi.org/10.1145/1773912.1773922}}
+
+@article{paxos,
+	Acmid = {279229},
+	Address = {New York, NY, USA},
+	Author = {Lamport, Leslie},
+	Doi = {10.1145/279227.279229},
+	Issn = {0734-2071},
+	Issue_Date = {May 1998},
+	Journal = {ACM Trans. Comput. Syst.},
+	Keywords = {state machines, three-phase commit, voting},
+	Month = may,
+	Number = {2},
+	Numpages = {37},
+	Pages = {133--169},
+	Publisher = {ACM},
+	Title = {The Part-time Parliament},
+	Url = {http://doi.acm.org/10.1145/279227.279229},
+	Volume = {16},
+	Year = {1998},
+	Bdsk-Url-1 = {http://doi.acm.org/10.1145/279227.279229},
+	Bdsk-Url-2 = {http://dx.doi.org/10.1145/279227.279229}}
+
+@inproceedings{si,
+ author = {Berenson, Hal and Bernstein, Phil and Gray, Jim and Melton, Jim and O'Neil, Elizabeth and O'Neil, Patrick},
+ title = {A Critique of {ANSI SQL} Isolation Levels},
+ booktitle = {Proceedings of the 1995 ACM SIGMOD International Conference on Management of Data},
+ series = {SIGMOD '95},
+ year = {1995},
+ isbn = {0-89791-731-6},
+ location = {San Jose, California, USA},
+ pages = {1--10},
+ numpages = {10},
+ acmid = {223785},
+ publisher = {ACM},
+ address = {New York, NY, USA}}
+
+@inproceedings{coda,
+  title={Session guarantees for weakly consistent replicated data},
+  author={Terry, Douglas B and Demers, Alan J and Petersen, Karin and Spreitzer, Mike J and Theimer, Marvin M and Welch, Brent B},
+  booktitle={Parallel and Distributed Information Systems, 1994., Proceedings of the Third International Conference on},
+  pages={140--149},
+  year={1994},
+  organization={IEEE}
+}
+
+@inproceedings{critique,
+ author = {Berenson, Hal and Bernstein, Phil and Gray, Jim and Melton, Jim and O'Neil, Elizabeth and O'Neil, Patrick},
+ title = {A Critique of ANSI SQL Isolation Levels},
+ booktitle = {Proceedings of the 1995 ACM SIGMOD International Conference on Management of Data},
+ series = {SIGMOD '95},
+ year = {1995},
+ isbn = {0-89791-731-6},
+ location = {San Jose, California, USA},
+ pages = {1--10},
+ numpages = {10},
+ doi = {10.1145/223784.223785},
+ acmid = {223785},
+ publisher = {ACM},
+} 
