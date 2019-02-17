@@ -1,61 +1,61 @@
-'use strict';
+'use strict'
 
-const defaultFileMode = 0o100777; // 33279
-const defaultDirMode = 0o40777; // 16895
+const defaultFileMode = 0o100777 // 33279
+const defaultDirMode = 0o40777 // 16895
 
-const defaultDirSize = 4096;
+const defaultDirSize = 4096
 
-const getUnixTime = function() {
-    if (arguments[0]) {
-        return Math.floor(new Date(arguments[0]).getTime() / 1000);
-    } else {
-        return Math.floor(new Date().getTime() / 1000);
-    }    
+const getUnixTime = function () {
+  if (arguments[0]) {
+    return Math.floor(new Date(arguments[0]).getTime() / 1000)
+  } else {
+    return Math.floor(new Date().getTime() / 1000)
+  }
 }
 
 class Attr {
-    constructor(inode, size, nlink) {
-        let now = getUnixTime();
+  constructor (inode, size, nlink) {
+    let now = getUnixTime()
 
-        this.inode = inode;
-        this.mode = null;
-        this.ctime = now;
-        this.mtime = now;
-        this.atime = now;
+    this.inode = inode
+    this.mode = null
+    this.ctime = now
+    this.mtime = now
+    this.atime = now
 
-        this.rdev = 0;
-        this.size = size;
-        this.nlink = nlink;
+    this.rdev = 0
+    this.size = size
+    this.nlink = nlink
 
-        this.uid = 1000;
-        this.gid = 1000;
+    this.uid = 1000
+    this.gid = 1000
 
-        this.children = {};
-        this.hlinks = {};
-        this.isFile = false;
-    }
-    addHardLinkRef(pino, name) {
-        this.hlinks[pino] = name;
-    }
+    this.children = {}
+    this.hlinks = {}
+    this.isFile = false
+  }
+  addHardLinkRef (pino, name) {
+    this.hlinks[pino] = name
+  }
 };
 
 class AttrFile extends Attr {
-    constructor(inode, size, nlink, mode) {
-        super(inode, size, nlink);
-        this.mode = mode ? mode : defaultFileMode;
-        this.isFile = true;
-    }
+  constructor (inode, size, nlink, mode) {
+    super(inode, size, nlink)
+    this.mode = mode || defaultFileMode
+    this.isFile = true
+  }
 }
 
 class AttrDir extends Attr {
-    constructor(inode, nlink, mode) {
-        super(inode, defaultDirSize, nlink);
-        this.mode = mode ? mode : defaultDirMode;
-        this.isFile = false;
-    }
-    addChild(name, inode) {
-        this.children[name] = inode;
-    }
+  constructor (inode, nlink, mode) {
+    super(inode, defaultDirSize, nlink)
+    this.mode = mode || defaultDirMode
+    this.isFile = false
+  }
+  addChild (name, inode) {
+    this.children[name] = inode
+  }
 }
 
-module.exports = { AttrFile, AttrDir, getUnixTime };
+module.exports = { AttrFile, AttrDir, getUnixTime }
