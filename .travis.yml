@@ -3,6 +3,7 @@ services:
 language: node_js
 node_js:
   - '8'
+  - '9'
 before_install:
   - sudo apt-get -qq update
   - sudo apt-get install -y libfuse-dev fuse
