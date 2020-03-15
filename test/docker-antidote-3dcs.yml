@@ -15,7 +15,7 @@ services:
     environment:
       NODE_NAME: "antidote@antidote2"
       SHORT_NAME: "true"
-      
+
   antidote3:
     image: antidotedb/antidote:latest
     ports:
@@ -25,7 +25,7 @@ services:
       SHORT_NAME: "true"
 
   link:
-    image: erlang:19
+    image: erlang:21-slim
     healthcheck:
       test: ["CMD", "test", "-f", "/tmp/ready"]
       interval: 3s

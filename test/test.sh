@@ -1,9 +1,9 @@
 #!/bin/bash
 
-start_single_instance() { 
+start_single_instance() {
     echo "Starting single instance"
-    docker rm -fv $(docker ps -q -f ancestor=antidotedb/antidote) 2> /dev/null 
-    docker run -d --rm -it -p "8087:8087" antidotedb/antidote > /dev/null
+    docker rm -fv $(docker ps -q -f ancestor=antidotedb/antidote) 2> /dev/null
+    docker run -d --rm -it -p "8087:8087" antidotedb/antidote:latest > /dev/null
     sleep 20
     rm -rf d1; mkdir d1
     node ./src/antidote-fs.js -m d1 -a "localhost:8087" > /dev/null &
@@ -14,7 +14,7 @@ start_single_instance() {
 stop_single_instance() {
     echo "Stopping single instance"
     fusermount -u ./d1
-    docker rm -fv $(docker ps -a -q) > /dev/null 2>&1
+    docker rm -fv $(docker ps -q -f ancestor=antidotedb/antidote) > /dev/null 2>&1
     echo "Single instance stopped"
 }
 
