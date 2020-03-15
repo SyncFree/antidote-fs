@@ -4,7 +4,7 @@ start_single_instance() {
     echo "Starting single instance"
     docker rm -fv $(docker ps -q -f ancestor=antidotedb/antidote) 2> /dev/null
     docker run -d --rm -it -p "8087:8087" antidotedb/antidote:latest > /dev/null
-    sleep 20
+    sleep 30
     rm -rf d1; mkdir d1
     node ./src/antidote-fs.js -m d1 -a "localhost:8087" > /dev/null &
     sleep 5
