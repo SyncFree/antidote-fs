@@ -5,16 +5,24 @@
 
 echo "Start distributed file system test"
 
-docker-compose -f ./test/docker-antidote-3dcs.yml down >/dev/null 2>&1
+docker-compose -rmi all -f ./test/docker-antidote-3dcs.yml down >/dev/null 2>&1
 docker-compose -f ./test/docker-antidote-3dcs.yml up -d #>/dev/null 2>&1
-sleep 30
+
+wait_antidote antidote1
+wait_antidote antidote2
+wait_antidote antidote3
+while [ "healthy" != `docker inspect --format='{{ .State.Health.Status}}' antidote_link` ]; do
+   echo "Waiting for Antidote instances to form a cluster..."
+   sleep 2
+done
+sleep 3
 
 rm -rf d1 d2 d3
 mkdir -p d1 d2 d3
 node ./src/antidote-fs.js -m d1 -a "localhost:8087" > /dev/null &
 node ./src/antidote-fs.js -m d2 -a "localhost:8088" > /dev/null &
 node ./src/antidote-fs.js -m d3 -a "localhost:8089" > /dev/null &
-sleep 3
+sleep 5
 
 EXIT=0
 

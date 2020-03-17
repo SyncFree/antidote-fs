@@ -2,7 +2,7 @@
 
 sleep 5
 
-cat > /tmp/connect.erl <<- EOF 
+cat > /tmp/connect.erl <<- EOF
 #!/usr/bin/env escript
 %%! -smp enable -sname erlshell -setcookie antidote
 main(_Args) ->
