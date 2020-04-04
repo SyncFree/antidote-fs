@@ -23,7 +23,7 @@
     "dependencies": {
         "antidote_ts_client": "^0.1.7",
         "fusejs": "github:pviotti/fusejs#v1.4.4",
-        "minimist": "^1.2.2"
+        "minimist": "^1.2.3"
     },
     "devDependencies": {
         "eslint": "^6.2.2",
