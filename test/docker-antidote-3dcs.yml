@@ -2,6 +2,7 @@ version: "2.1"
 services:
   antidote1:
     image: antidotedb/antidote:latest
+    container_name: antidote1
     ports:
      - "8087:8087"
     environment:
@@ -10,14 +11,16 @@ services:
 
   antidote2:
     image: antidotedb/antidote:latest
+    container_name: antidote2
     ports:
      - "8088:8087"
     environment:
       NODE_NAME: "antidote@antidote2"
       SHORT_NAME: "true"
-      
+
   antidote3:
     image: antidotedb/antidote:latest
+    container_name: antidote3
     ports:
      - "8089:8087"
     environment:
@@ -25,7 +28,8 @@ services:
       SHORT_NAME: "true"
 
   link:
-    image: erlang:19
+    image: erlang:21-slim
+    container_name: antidote_link
     healthcheck:
       test: ["CMD", "test", "-f", "/tmp/ready"]
       interval: 3s

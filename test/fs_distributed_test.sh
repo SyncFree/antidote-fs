@@ -5,16 +5,24 @@
 
 echo "Start distributed file system test"
 
-docker-compose -f ./test/docker-antidote-3dcs.yml down >/dev/null 2>&1
+docker-compose -rmi all -f ./test/docker-antidote-3dcs.yml down >/dev/null 2>&1
 docker-compose -f ./test/docker-antidote-3dcs.yml up -d #>/dev/null 2>&1
-sleep 25
+
+wait_antidote antidote1
+wait_antidote antidote2
+wait_antidote antidote3
+while [ "healthy" != `docker inspect --format='{{ .State.Health.Status}}' antidote_link` ]; do
+   echo "Waiting for Antidote instances to form a cluster..."
+   sleep 2
+done
+sleep 3
 
 rm -rf d1 d2 d3
 mkdir -p d1 d2 d3
 node ./src/antidote-fs.js -m d1 -a "localhost:8087" > /dev/null &
 node ./src/antidote-fs.js -m d2 -a "localhost:8088" > /dev/null &
 node ./src/antidote-fs.js -m d3 -a "localhost:8089" > /dev/null &
-sleep 3
+sleep 5
 
 EXIT=0
 
@@ -24,8 +32,8 @@ echo hello there 2 > ./d2/test.txt
 sleep 2
 echo -n "File conflict.................."
 if [[ -f ./d3/test.txt-CONFLICT_0 && -f ./d3/test.txt-CONFLICT_1 ]]
-then ok; 
-else ko; EXIT=1; 
+then ok;
+else ko; EXIT=1;
 fi
 
 # Directory naming conflict: merge directories
@@ -44,7 +52,7 @@ if [[ -d ./d3/dirC && \
     -f ./d3/dirC/mydirAfile.txt &&
     $(< ./d3/dirC/dirBB/mydirBBfile.txt) == $(echo "hello world B") &&
     $(< ./d1/dirC/mydirAfile.txt) == $(echo "hello world A") ]]
-then ok; 
+then ok;
 else ko; EXIT=1;
 fi
 
